@@ -1,0 +1,53 @@
+# ─────────────────────────────────────────
+# Root-level .gitignore
+# ─────────────────────────────────────────
+
+# Expo root cache
+.expo/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# QR code images & temp files generated at runtime
+QRCode*.png
+
+# ─── React Native / Expo (auction-prediction-app) ───
+auction-prediction-app/node_modules/
+auction-prediction-app/.expo/
+auction-prediction-app/dist/
+auction-prediction-app/web-build/
+auction-prediction-app/expo-env.d.ts
+auction-prediction-app/.metro-health-check*
+auction-prediction-app/ios/
+auction-prediction-app/android/
+auction-prediction-app/.kotlin/
+auction-prediction-app/*.orig.*
+auction-prediction-app/*.jks
+auction-prediction-app/*.p8
+auction-prediction-app/*.p12
+auction-prediction-app/*.key
+auction-prediction-app/*.mobileprovision
+auction-prediction-app/*.tsbuildinfo
+auction-prediction-app/npm-debug.*
+auction-prediction-app/yarn-debug.*
+auction-prediction-app/yarn-error.*
+auction-prediction-app/.env*.local
+auction-prediction-app/expo_error.log
+auction-prediction-app/expo_output.log
+auction-prediction-app/package-lock.json
+
+# ─── Python / ML Backend ───
+ml-backend/__pycache__/
+ml-backend/*.pyc
+ml-backend/*.pyo
+ml-backend/*.pyd
+ml-backend/model.pkl
+ml-backend/.env
+ml-backend/venv/
+ml-backend/.venv/
+ml-backend/*.egg-info/
+ml-backend/dist/
+ml-backend/build/

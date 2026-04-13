@@ -1,0 +1,37 @@
+import React, { useState } from 'react';
+import { View, Text, SafeAreaView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { globalStyles } from '../../styles/theme';
+
+export default function TrainModelScreen() {
+  const [loading, setLoading] = useState(false);
+
+  const trainModel = async () => {
+    setLoading(true);
+    try {
+      // Connect to Python Backend once available
+      // const res = await fetch('http://localhost:8000/train');
+      // const data = await res.json();
+      setTimeout(() => {
+        setLoading(false);
+        Alert.alert('Success', 'Model trained successfully on Data.xlsx');
+      }, 2000);
+    } catch (error) {
+      setLoading(false);
+      Alert.alert('Error', 'Failed to train model');
+    }
+  };
+
+  return (
+    <SafeAreaView style={globalStyles.container}>
+      <View style={{ padding: 20, flex: 1, justifyContent: 'center' }}>
+        <Text style={[globalStyles.title, { textAlign: 'center' }]}>Train ML Model</Text>
+        <Text style={{ textAlign: 'center', marginBottom: 20 }}>
+          This will trigger the python backend to train on Data.xlsx.
+        </Text>
+        <TouchableOpacity style={globalStyles.button} onPress={trainModel} disabled={loading}>
+          {loading ? <ActivityIndicator color="white" /> : <Text style={globalStyles.buttonText}>Start Training</Text>}
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
