@@ -1,128 +1,103 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Alert,
-  SafeAreaView, ActivityIndicator, Image, Platform
+  ActivityIndicator, Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { supabase } from '../../lib/supabase';
 import { colors, globalStyles } from '../../styles/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import * as AuthSession from 'expo-auth-session';
-import * as WebBrowser from 'expo-web-browser';
 
-// Required: completes any pending auth session when screen is visible
+// Required: closes the browser tab and completes the auth session
 WebBrowser.maybeCompleteAuthSession();
 
-// ─── Helper: parse tokens from callback URL (handles both # and ? separators) ───
-function parseTokensFromUrl(url) {
-  if (!url) return null;
-  const parts = url.includes('#') ? url.split('#')[1] : url.split('?')[1];
-  if (!parts) return null;
-  return parts.split('&').reduce((acc, pair) => {
-    const [k, v] = pair.split('=');
-    acc[k] = decodeURIComponent(v || '');
-    return acc;
-  }, {});
-}
+// Official Google G logo
+const GOOGLE_LOGO = 'https://developers.google.com/identity/images/g-logo.png';
 
 export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [socialLoading, setSocialLoading] = useState(null);
+  const [showPwd, setShowPwd]   = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [gLoading, setGLoading] = useState(false);
 
-  // Warm up the browser on mount for faster OAuth on Android
-  useEffect(() => {
-    WebBrowser.warmUpAsync();
-    return () => { WebBrowser.coolDownAsync(); };
-  }, []);
+  // ─── Google Sign-In via Supabase OAuth (PKCE flow) ─────────────────────
+  // Supabase v2 uses PKCE by default: Google redirects back with a `code`,
+  // NOT tokens. We call exchangeCodeForSession(url) to swap the code for a
+  // real session. onAuthStateChange in AppNavigator then handles navigation.
+  const handleGoogleLogin = async () => {
+    setGLoading(true);
+    try {
+      // Deep link the browser will redirect back to after auth
+      const redirectTo = Linking.createURL('/auth-callback');
 
-  // ─── Email / Password Login ───────────────────────────────────────────────
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          skipBrowserRedirect: true,  // we open the browser manually below
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.url) throw new Error('No OAuth URL returned from Supabase.');
+
+      // Open Google sign-in in an in-app browser
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+
+      if (result.type === 'success' && result.url) {
+        // Implicit flow: tokens are in the URL hash fragment as
+        // exp://.../#access_token=XXX&refresh_token=YYY&...
+        // Parse them out and set the Supabase session manually.
+        const url = result.url;
+        const hashPart = url.includes('#') ? url.split('#')[1] : url.split('?')[1] ?? '';
+        const params = Object.fromEntries(new URLSearchParams(hashPart));
+        const accessToken  = params.access_token;
+        const refreshToken = params.refresh_token ?? '';
+
+        if (accessToken) {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token:  accessToken,
+            refresh_token: refreshToken,
+          });
+          if (sessionError) throw sessionError;
+          // onAuthStateChange in AppNavigator fires → navigates automatically
+        } else {
+          throw new Error('No access token received. Please try again.');
+        }
+      } else if (result.type === 'cancel' || result.type === 'dismiss') {
+        setGLoading(false);
+      }
+    } catch (err) {
+      Alert.alert('Google Sign-In Failed', err.message);
+      setGLoading(false);
+    }
+  };
+
+  // ─── Email / Password Sign-In ────────────────────────────────────────────
   const handleLogin = async () => {
-    if (!email || !password) return Alert.alert('Error', 'Please enter email and password');
+    if (!email || !password)
+      return Alert.alert('Error', 'Please enter email and password');
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) Alert.alert('Login Failed', error.message);
   };
 
-  // ─── Generic OAuth Handler (Google / Facebook) ────────────────────────────
-  const handleOAuthLogin = async (provider) => {
-    setSocialLoading(provider);
-    try {
-      // On web: Supabase handles the redirect itself — just call signInWithOAuth
-      // without skipBrowserRedirect so the browser navigates directly.
-      // On native: use the auth.expo.io proxy to avoid exp:// deep link issues.
-      if (Platform.OS === 'web') {
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider,
-          options: {
-            redirectTo: window.location.origin,
-          },
-        });
-        if (error) Alert.alert(`${provider} Login Error`, error.message);
-        // Browser will redirect automatically — no further action needed
-        return;
-      }
-
-      // ── Native (iOS / Android via Expo Go) ──
-      const redirectTo = AuthSession.makeRedirectUri({ useProxy: true });
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo,
-          skipBrowserRedirect: true,
-        },
-      });
-
-      if (error) {
-        Alert.alert(`${provider} Login Error`, error.message);
-        return;
-      }
-
-      if (!data?.url) {
-        Alert.alert('Error', 'Could not get authentication URL');
-        return;
-      }
-
-      // Open OAuth in a safe Chrome Custom Tab — browser intercepts the
-      // https://auth.expo.io redirect without triggering Expo's bundle loader
-      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-
-      if (result.type === 'success' && result.url) {
-        const tokens = parseTokensFromUrl(result.url);
-        if (tokens?.access_token && tokens?.refresh_token) {
-          const { error: sessionError } = await supabase.auth.setSession({
-            access_token: tokens.access_token,
-            refresh_token: tokens.refresh_token,
-          });
-          if (sessionError) Alert.alert('Session Error', sessionError.message);
-        } else {
-          Alert.alert('Login Failed', 'Could not retrieve session tokens. Please try again.');
-        }
-      } else if (result.type === 'cancel') {
-        // User closed the browser — do nothing
-      } else {
-        Alert.alert('Login Failed', 'Authentication was not completed. Please try again.');
-      }
-    } catch (err) {
-      Alert.alert('Error', err.message);
-    } finally {
-      setSocialLoading(null);
-    }
-  };
-
   return (
     <SafeAreaView style={globalStyles.container}>
       <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 20 }}>
+
+        {/* App Logo */}
         <View style={{ alignItems: 'center', marginBottom: 12 }}>
           <View style={{
             width: 70, height: 70, borderRadius: 35,
-            borderWidth: 2, borderColor: '#D4AF37',
-            justifyContent: 'center', alignItems: 'center'
+            borderWidth: 2, borderColor: '#FF6600',
+            justifyContent: 'center', alignItems: 'center',
           }}>
-            <MaterialCommunityIcons name="cricket" size={44} color="#D4AF37" />
+            <MaterialCommunityIcons name="cricket" size={44} color="#FF6600" />
           </View>
         </View>
 
@@ -134,9 +109,15 @@ export default function LoginScreen({ navigation }) {
         </Text>
 
         <View style={globalStyles.card}>
+
+          {/* Email */}
           <Text style={{ color: colors.text, marginBottom: 5 }}>Email Address</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: 8, backgroundColor: colors.white, marginBottom: 16 }}>
-            <MaterialCommunityIcons name="email" size={24} color={colors.primary} style={{ paddingLeft: 10 }} />
+          <View style={{
+            flexDirection: 'row', alignItems: 'center',
+            borderWidth: 1, borderColor: colors.border,
+            borderRadius: 8, backgroundColor: colors.white, marginBottom: 16,
+          }}>
+            <MaterialCommunityIcons name="email" size={22} color={colors.primary} style={{ paddingLeft: 10 }} />
             <TextInput
               style={{ flex: 1, padding: 12, fontSize: 16, color: colors.text }}
               placeholder="example@gmail.com"
@@ -147,53 +128,91 @@ export default function LoginScreen({ navigation }) {
             />
           </View>
 
+          {/* Password */}
           <Text style={{ color: colors.text, marginBottom: 5 }}>Password</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: 8, backgroundColor: colors.white, marginBottom: 16 }}>
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ paddingLeft: 10 }}>
-              <MaterialCommunityIcons name={showPassword ? 'eye' : 'eye-off'} size={24} color={colors.primary} />
+          <View style={{
+            flexDirection: 'row', alignItems: 'center',
+            borderWidth: 1, borderColor: colors.border,
+            borderRadius: 8, backgroundColor: colors.white, marginBottom: 20,
+          }}>
+            <TouchableOpacity onPress={() => setShowPwd(p => !p)} style={{ paddingLeft: 10 }}>
+              <MaterialCommunityIcons name={showPwd ? 'eye' : 'eye-off'} size={22} color={colors.primary} />
             </TouchableOpacity>
             <TextInput
               style={{ flex: 1, padding: 12, fontSize: 16, color: colors.text }}
               placeholder="Password"
               value={password}
               onChangeText={setPassword}
-              secureTextEntry={!showPassword}
+              secureTextEntry={!showPwd}
             />
           </View>
 
+          {/* Sign In Button */}
           <TouchableOpacity style={globalStyles.button} onPress={handleLogin} disabled={loading}>
             {loading
               ? <ActivityIndicator color={colors.white} />
               : <Text style={globalStyles.buttonText}>Sign In</Text>}
           </TouchableOpacity>
 
+          {/* Divider */}
           <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 20 }}>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-            <Text style={{ marginHorizontal: 10, color: colors.textLight, fontSize: 13, fontWeight: '500' }}>OR</Text>
+            <Text style={{ marginHorizontal: 12, color: colors.textLight, fontSize: 13, fontWeight: '500' }}>OR</Text>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
           </View>
 
-          <View style={{ alignItems: 'center', marginBottom: 10 }}>
-            {/* Google — centred, solo */}
-            <TouchableOpacity
-              style={{ width: 60, height: 60, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 30, justifyContent: 'center', alignItems: 'center' }}
-              onPress={() => handleOAuthLogin('google')}
-              disabled={!!socialLoading}
-            >
-              {socialLoading === 'google'
-                ? <ActivityIndicator color={colors.primary} />
-                : <Image source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }} style={{ width: 30, height: 30 }} resizeMode="contain" />}
-            </TouchableOpacity>
-          </View>
+          {/* ── Google Sign-In Button (via Supabase OAuth) ── */}
+          <TouchableOpacity
+            onPress={handleGoogleLogin}
+            disabled={gLoading}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#ffffff',
+              borderWidth: 1,
+              borderColor: '#dadce0',
+              borderRadius: 4,
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.08,
+              shadowRadius: 2,
+              elevation: 2,
+              opacity: gLoading ? 0.6 : 1,
+            }}
+          >
+            {gLoading ? (
+              <ActivityIndicator color="#4285F4" style={{ marginRight: 12 }} />
+            ) : (
+              <Image
+                source={{ uri: GOOGLE_LOGO }}
+                style={{ width: 22, height: 22, marginRight: 12 }}
+                resizeMode="contain"
+              />
+            )}
+            <Text style={{
+              color: '#3c4043',
+              fontSize: 15,
+              fontWeight: '600',
+              letterSpacing: 0.25,
+              fontFamily: 'System',
+            }}>
+              {gLoading ? 'Signing in...' : 'Sign in with Google'}
+            </Text>
+          </TouchableOpacity>
 
-          <View style={{ marginTop: 25, alignItems: 'center' }}>
+          {/* Navigation Links */}
+          <View style={{ marginTop: 28, alignItems: 'center' }}>
             <TouchableOpacity onPress={() => navigation.navigate('Register')} style={{ marginBottom: 15 }}>
-              <Text style={{ color: colors.blue }}>Don't have an account?</Text>
+              <Text style={{ color: colors.blue }}>Don't have an account? Register</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
               <Text style={{ color: colors.error, fontWeight: 'bold' }}>Forgot Password?</Text>
             </TouchableOpacity>
           </View>
+
         </View>
       </View>
     </SafeAreaView>

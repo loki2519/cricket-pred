@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Alert, SafeAreaView, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { colors, globalStyles } from '../../styles/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -101,7 +102,7 @@ export default function SelectTeamScreen({ navigation }) {
                       padding: 14, borderRadius: 12, marginBottom: 10,
                       borderWidth: 2,
                       borderColor: isSelected ? colors.primary : (isTaken ? '#ddd' : '#eee'),
-                      backgroundColor: isSelected ? '#e8edf5' : (isTaken ? '#f9f9f9' : colors.white),
+                      backgroundColor: isSelected ? '#FFF5EB' : (isTaken ? '#f9f9f9' : colors.white),
                     }}
                   >
                     <MaterialCommunityIcons

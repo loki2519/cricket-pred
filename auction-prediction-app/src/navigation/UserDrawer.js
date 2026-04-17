@@ -35,7 +35,7 @@ function CustomDrawerContent(props) {
     <View style={{ flex: 1 }}>
       {/* Sidebar Header */}
       <View style={{
-        backgroundColor: colors.primary, padding: 20,
+        backgroundColor: colors.white, padding: 20,
         paddingTop: 60, paddingBottom: 25, alignItems: 'center',
       }}>
         {/* Profile Image or default shield icon */}
@@ -44,17 +44,17 @@ function CustomDrawerContent(props) {
             source={{ uri: profileUri }}
             style={{
               width: 72, height: 72, borderRadius: 36,
-              borderWidth: 2.5, borderColor: colors.white,
+              borderWidth: 2.5, borderColor: colors.primary,
               marginBottom: 10,
             }}
           />
         ) : (
-          <MaterialCommunityIcons name="shield-account" size={56} color={colors.white} style={{ marginBottom: 8 }} />
+          <MaterialCommunityIcons name="shield-account" size={56} color={colors.primary} style={{ marginBottom: 8 }} />
         )}
-        <Text style={{ color: colors.white, fontSize: 18, fontWeight: 'bold', textAlign: 'center' }}>
+        <Text style={{ color: colors.primary, fontSize: 18, fontWeight: 'bold', textAlign: 'center' }}>
           {teamName}
         </Text>
-        <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>Team Manager</Text>
+        <Text style={{ color: colors.textLight, fontSize: 12 }}>Team Manager</Text>
       </View>
 
       <DrawerContentScrollView {...props} contentContainerStyle={{ paddingTop: 10 }}>
@@ -119,7 +119,7 @@ export default function UserDrawer({ route }) {
       />
 
       <Drawer.Screen name="Profile"
-        children={(props) => <ProfileScreen {...props} teamName={teamName} />}
+        children={(props) => <ProfileScreen {...props} teamName={teamName} teamId={teamId} />}
         options={{ drawerIcon: ({ color }) => <MaterialCommunityIcons name="account-circle" color={color} size={24} /> }}
       />
 

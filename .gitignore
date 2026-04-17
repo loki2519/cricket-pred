@@ -36,8 +36,15 @@ auction-prediction-app/yarn-debug.*
 auction-prediction-app/yarn-error.*
 auction-prediction-app/.env*.local
 auction-prediction-app/expo_error.log
+auction-prediction-app/expo_clean.log
+auction-prediction-app/expo_8082.log
+auction-prediction-app/expo_live.log
 auction-prediction-app/expo_output.log
+auction-prediction-app/expo_tunnel_8082.log
 auction-prediction-app/package-lock.json
+
+auction-prediction-app/database_updates.sql
+
 
 # ─── Python / ML Backend ───
 ml-backend/__pycache__/

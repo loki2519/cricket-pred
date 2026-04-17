@@ -17,16 +17,16 @@ function CustomDrawerContent(props) {
   return (
     <View style={{ flex: 1 }}>
       {/* AuctionOracle Header Bleeding to all Edges */}
-      <View style={{ backgroundColor: colors.primary, padding: 20, paddingTop: 60, paddingBottom: 25, alignItems: 'center' }}>
+      <View style={{ backgroundColor: colors.white, padding: 20, paddingTop: 60, paddingBottom: 25, alignItems: 'center' }}>
         <View style={{ 
           width: 58, height: 58, borderRadius: 29, 
-          borderWidth: 2, borderColor: colors.accent, 
+          borderWidth: 2, borderColor: colors.primary, 
           justifyContent: 'center', alignItems: 'center',
         }}>
-          <MaterialCommunityIcons name="cricket" size={36} color={colors.accent} />
+          <MaterialCommunityIcons name="cricket" size={36} color={colors.primary} />
         </View>
-        <Text style={{ color: colors.white, fontSize: 20, fontWeight: 'bold', marginTop: 12 }}>AuctionOracle</Text>
-        <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>Admin Panel</Text>
+        <Text style={{ color: colors.primary, fontSize: 20, fontWeight: 'bold', marginTop: 12 }}>AuctionOracle</Text>
+        <Text style={{ color: colors.textLight, fontSize: 12 }}>Admin Panel</Text>
       </View>
       <DrawerContentScrollView {...props} contentContainerStyle={{ paddingTop: 10 }}>
         <DrawerItemList {...props} />

@@ -1,37 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, SafeAreaView, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import {
+  View, Text, TouchableOpacity,
+  TextInput, ScrollView,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { globalStyles, colors } from '../../styles/theme';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import {
+  computePerformanceScore,
+  classifyCategory,
+  CATEGORY_COLORS,
+  CATEGORY_BASE_PRICE,
+  computePredictedPrice,
+} from '../../lib/playerCategory';
 
 const ROLES = ['Batsman', 'Bowler', 'All-Rounder', 'Wicketkeeper Batsman'];
-
-function computeScore(role, { matches, runs, wickets, economy, strikeRate, stumps, catches }) {
-  const m   = parseFloat(matches)    || 0;
-  const r   = parseFloat(runs)       || 0;
-  const w   = parseFloat(wickets)    || 0;
-  const eco = parseFloat(economy)    || 0;
-  const sr  = parseFloat(strikeRate) || 0;
-  const st  = parseFloat(stumps)     || 0;
-  const ct  = parseFloat(catches)    || 0;
-
-  if (role === 'Batsman')     return (r / 100) + (sr * 0.5) + (m * 0.5);
-  if (role === 'Bowler')      return (w * 2) - (eco * 5) + (m * 0.5);
-  if (role === 'All-Rounder') return (r / 150) + (w * 2) - (eco * 4) + (sr * 0.3) + (m * 0.5);
-  // Wicketkeeper Batsman — given formula
-  // Score_wk = 0.3×(Runs/100) + 0.25×SR + 0.15×Matches + 0.15×Catches + 0.15×Stumpings
-  if (role === 'Wicketkeeper Batsman')
-    return 0.3 * (r / 100) + 0.25 * sr + 0.15 * m + 0.15 * ct + 0.15 * st;
-  return 0;
-}
-
-function computePrice(score) {
-  const seed    = (score * 73.19) % 100;
-  const randNum = seed / 100;
-  const calc    = (min, max) => Math.floor(min + randNum * (max - min + 1));
-  if (score > 80) return calc(30000000, 40000000);
-  if (score > 40) return calc(15000000, 30000000);
-  return calc(8000000, 15000000);
-}
 
 export default function UserPredictPrice() {
   const [selectedRole, setSelectedRole] = useState('');
@@ -39,27 +21,25 @@ export default function UserPredictPrice() {
     matches: '', runs: '', wickets: '', economy: '',
     strikeRate: '', stumps: '', catches: '',
   });
-  const [prediction, setPrediction] = useState(null);
-  const [score, setScore]           = useState(null);
+  const [result, setResult] = useState(null);
 
   const set = (key, val) => setInputs(prev => ({ ...prev, [key]: val }));
 
   const handlePredict = () => {
     if (!selectedRole || !inputs.matches) return;
-    const s = computeScore(selectedRole, inputs);
-    setPrediction(computePrice(s));
-    setScore(parseFloat(s.toFixed(2)));
+    const score    = computePerformanceScore(selectedRole, inputs);
+    const category = classifyCategory(score);
+    const price    = computePredictedPrice(score, category);
+    setResult({ score: parseFloat(score.toFixed(2)), category, price });
   };
 
   const formatCurrency = (val) => '₹' + val.toLocaleString('en-IN');
-  const getPriceLabel  = (s) => s > 80 ? 'Premium Player' : s > 40 ? 'Mid-tier Player' : 'Budget Player';
-  const getPriceColor  = (s) => s > 80 ? '#e74c3c' : s > 40 ? '#f39c12' : '#27ae60';
 
-  const isBatType      = selectedRole === 'Batsman' || selectedRole === 'All-Rounder' || selectedRole === 'Wicketkeeper Batsman';
+  const isBatType   = ['Batsman', 'All-Rounder', 'Wicketkeeper Batsman'].includes(selectedRole);
   const showRuns       = isBatType;
   const showStrikeRate = isBatType;
-  const showWickets    = selectedRole === 'Bowler' || selectedRole === 'All-Rounder';
-  const showEconomy    = selectedRole === 'Bowler' || selectedRole === 'All-Rounder';
+  const showWickets    = ['Bowler', 'All-Rounder'].includes(selectedRole);
+  const showEconomy    = ['Bowler', 'All-Rounder'].includes(selectedRole);
   const showStumps     = selectedRole === 'Wicketkeeper Batsman';
   const showCatches    = selectedRole === 'Wicketkeeper Batsman';
 
@@ -69,17 +49,19 @@ export default function UserPredictPrice() {
     <SafeAreaView style={globalStyles.container}>
       <ScrollView contentContainerStyle={{ padding: 20 }}>
         <Text style={[globalStyles.title, { marginBottom: 5 }]}>Predict Player Price</Text>
-        <Text style={{ color: colors.textLight, marginBottom: 20 }}>Enter stats to estimate auction value</Text>
+        <Text style={{ color: colors.textLight, marginBottom: 20 }}>
+          Enter stats to estimate auction value
+        </Text>
 
         <View style={globalStyles.card}>
-          {/* Role — 2×2 grid */}
+          {/* Role selector */}
           <Text style={{ color: colors.text, fontWeight: 'bold', marginBottom: 8 }}>Select Role *</Text>
           {roleRows.map((row, ri) => (
             <View key={ri} style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
               {row.map(role => (
                 <TouchableOpacity
                   key={role}
-                  onPress={() => { setSelectedRole(role); setPrediction(null); setScore(null); }}
+                  onPress={() => { setSelectedRole(role); setResult(null); }}
                   style={{
                     flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center',
                     backgroundColor: selectedRole === role ? colors.primary : colors.background,
@@ -102,52 +84,47 @@ export default function UserPredictPrice() {
           <TextInput style={globalStyles.input} placeholder="e.g. 120" keyboardType="numeric"
             value={inputs.matches} onChangeText={v => set('matches', v)} />
 
-          {/* Runs */}
           {showRuns && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Total Runs</Text>
             <TextInput style={globalStyles.input} placeholder="e.g. 3500" keyboardType="numeric"
               value={inputs.runs} onChangeText={v => set('runs', v)} />
           </>}
 
-          {/* Strike Rate */}
           {showStrikeRate && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Strike Rate</Text>
             <TextInput style={globalStyles.input} placeholder="e.g. 140.5" keyboardType="numeric"
               value={inputs.strikeRate} onChangeText={v => set('strikeRate', v)} />
           </>}
 
-          {/* Wickets */}
           {showWickets && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Wickets</Text>
             <TextInput style={globalStyles.input} placeholder="e.g. 80" keyboardType="numeric"
               value={inputs.wickets} onChangeText={v => set('wickets', v)} />
           </>}
 
-          {/* Economy */}
           {showEconomy && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Economy Rate</Text>
             <TextInput style={globalStyles.input} placeholder="e.g. 7.5" keyboardType="numeric"
               value={inputs.economy} onChangeText={v => set('economy', v)} />
           </>}
 
-          {/* Stumpings — WK only */}
           {showStumps && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Stumpings 🧤</Text>
             <TextInput style={globalStyles.input} placeholder="e.g. 45" keyboardType="numeric"
               value={inputs.stumps} onChangeText={v => set('stumps', v)} />
           </>}
 
-          {/* Catches — WK only */}
           {showCatches && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Catches 🧤</Text>
             <TextInput style={globalStyles.input} placeholder="e.g. 90" keyboardType="numeric"
               value={inputs.catches} onChangeText={v => set('catches', v)} />
           </>}
 
-
-
           <TouchableOpacity
-            style={[globalStyles.button, { marginTop: 8, opacity: (selectedRole && inputs.matches) ? 1 : 0.5 }]}
+            style={[globalStyles.button, {
+              marginTop: 8,
+              opacity: (selectedRole && inputs.matches) ? 1 : 0.5,
+            }]}
             onPress={handlePredict}
             disabled={!selectedRole || !inputs.matches}
           >
@@ -155,26 +132,54 @@ export default function UserPredictPrice() {
           </TouchableOpacity>
         </View>
 
-        {/* Result card */}
-        {prediction !== null && score !== null && (
-          <View style={[globalStyles.card, {
-            marginTop: 20, alignItems: 'center', paddingVertical: 30,
-            borderWidth: 2, borderColor: getPriceColor(score),
-          }]}>
-            <MaterialCommunityIcons name="trophy" size={40} color={getPriceColor(score)} />
-            <Text style={{ fontSize: 14, color: colors.textLight, marginTop: 10 }}>Player Classification</Text>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', color: getPriceColor(score), marginTop: 4 }}>
-              {getPriceLabel(score)}
-            </Text>
-            <Text style={{ fontSize: 13, color: colors.textLight, marginTop: 14 }}>Predicted Auction Price</Text>
-            <Text style={{ fontSize: 36, fontWeight: 'bold', color: getPriceColor(score), marginTop: 4 }}>
-              {formatCurrency(prediction)}
-            </Text>
-            <View style={{ marginTop: 12, backgroundColor: colors.background, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 8 }}>
-              <Text style={{ color: colors.textLight, fontSize: 12 }}>Performance Score: {score}</Text>
+        {/* ── Result Card ── */}
+        {result && (() => {
+          const catColor  = CATEGORY_COLORS[result.category];
+          const basePrice = CATEGORY_BASE_PRICE[result.category];
+          return (
+            <View style={[globalStyles.card, {
+              marginTop: 20, borderWidth: 2, borderColor: catColor,
+            }]}>
+              {/* Category badge */}
+              <View style={{ alignItems: 'center', marginBottom: 16 }}>
+                <View style={{
+                  width: 80, height: 80, borderRadius: 40,
+                  backgroundColor: catColor + '20',
+                  justifyContent: 'center', alignItems: 'center',
+                  borderWidth: 3, borderColor: catColor,
+                }}>
+                  <Text style={{ fontSize: 36, fontWeight: 'bold', color: catColor }}>
+                    {result.category}
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', color: catColor, marginTop: 10 }}>
+                  Category {result.category}
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.textLight, marginTop: 4 }}>
+                  Performance Score: {result.score}
+                </Text>
+              </View>
+
+              {/* Price breakdown */}
+              <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 14 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: colors.textLight, fontSize: 13 }}>
+                    Base Price (Category {result.category})
+                  </Text>
+                  <Text style={{ color: colors.text, fontWeight: '600', fontSize: 13 }}>
+                    {formatCurrency(basePrice)}
+                  </Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={{ color: colors.textLight, fontSize: 13 }}>Predicted Auction Price</Text>
+                  <Text style={{ color: catColor, fontWeight: 'bold', fontSize: 18 }}>
+                    {formatCurrency(result.price)}
+                  </Text>
+                </View>
+              </View>
             </View>
-          </View>
-        )}
+          );
+        })()}
       </ScrollView>
     </SafeAreaView>
   );

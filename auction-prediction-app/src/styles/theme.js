@@ -1,23 +1,23 @@
 export const colors = {
-  primary: '#0D1B2A',        // Deep Navy
-  secondary: '#1D4ED8',      // Modern Blue
-  accent: '#E6B800',         // Gold
-  background: '#F4F7FB',
-  card: '#FFFFFF',
-  section: '#EEF2F7',
+  primary: '#FF6600',        // Orange
+  secondary: '#E65C00',      // Darker Orange
+  accent: '#FF8533',         // Lighter Orange
+  background: '#FFFFFF',     // White
+  card: '#FFFFFF',           // White
+  section: '#FFF5EB',        // Very Light Orange
   border: '#E2E8F0',
-  text: '#0D1B2A',           // Text Primary
-  textSecondary: '#1E293B',
-  textLight: '#64748B',      // Text Muted
+  text: '#333333',           // Text Primary - Dark Gray
+  textSecondary: '#666666',
+  textLight: '#888888',      // Text Muted
   white: '#FFFFFF',
   success: '#16A34A',
   warning: '#F97316',
   error: '#DC2626',
-  priceHighlight: '#E6B800',
-  budget: '#1D4ED8',
+  priceHighlight: '#FF6600',
+  budget: '#FF6600',
   cricketGreen: '#2E7D32',
   pitchBrown: '#8B5E3C',
-  blue: '#1D4ED8',           // Legacy fallback to Secondary
+  blue: '#FF6600',           // Legacy fallback mapped to Orange
 };
 
 export const globalStyles = {

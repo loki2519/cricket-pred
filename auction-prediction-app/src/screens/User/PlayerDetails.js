@@ -1,41 +1,41 @@
 import React, { useState } from 'react';
-import { View, Text, SafeAreaView, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import {
+  View, Text, TouchableOpacity,
+  Alert, ActivityIndicator, ScrollView,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { colors, globalStyles } from '../../styles/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-
-// Dynamic scoring with Strike Rate
-function computePredictedPrice(player) {
-  const m = parseInt(player.matches) || 0;
-  const r = parseInt(player.runs) || 0;
-  const w = parseInt(player.wickets) || 0;
-  const eco = parseFloat(player.economy) || 0;
-  const sr = parseFloat(player.strike_rate) || 0;
-  const role = player.role || '';
-
-  let score = 0;
-  if (role === 'Batsman')     score = (r / 100) + (sr * 0.5) + (m * 0.5);
-  else if (role === 'Bowler') score = (w * 2) - (eco * 5) + (m * 0.5);
-  else                        score = (r / 150) + (w * 2) - (eco * 4) + (sr * 0.3) + (m * 0.5);
-
-  // Deterministic calculation based on score instead of random
-  const seed = (score * 73.19) % 100;
-  const randNum = seed / 100;
-  
-  const calc = (min, max) => Math.floor(min + randNum * (max - min + 1));
-  
-  if (score > 80) return calc(30000000, 40000000);
-  if (score > 40) return calc(15000000, 30000000);
-  return calc(8000000, 15000000);
-}
+import {
+  computePerformanceScore,
+  classifyCategory,
+  CATEGORY_COLORS,
+  CATEGORY_BASE_PRICE,
+  computePredictedPrice,
+} from '../../lib/playerCategory';
 
 export default function PlayerDetails({ route, navigation }) {
   const { player, teamId } = route.params;
   const [loading, setLoading] = useState(false);
 
-  // Compute once per screen open so same player always shows different predicted value
-  const [predictedPrice] = useState(() => computePredictedPrice(player));
-  const auctionPrice = player.price || predictedPrice;
+  // ── Re-compute category + price from live formulas ───────────
+  const stats = {
+    matches:    player.matches,
+    runs:       player.runs,
+    strikeRate: player.strike_rate,
+    wickets:    player.wickets,
+    economy:    player.economy,
+    catches:    player.catches,
+    stumps:     player.stumps,
+  };
+  const score     = computePerformanceScore(player.role, stats);
+  const category  = player.category || classifyCategory(score);
+  const catColor  = CATEGORY_COLORS[category]    || colors.textLight;
+  const basePrice = CATEGORY_BASE_PRICE[category] || 0;
+  const predicted = computePredictedPrice(score, category);
+  const auctionPrice = player.price || predicted;
+
   const formatCurrency = (amount) => '₹' + (amount || 0).toLocaleString('en-IN');
 
   const handleBuyPlayer = async () => {
@@ -48,7 +48,6 @@ export default function PlayerDetails({ route, navigation }) {
         if (error) throw error;
         team = data;
       } else {
-        // Fallback: get team from user_teams table
         const { data: { user } } = await supabase.auth.getUser();
         const { data: ut } = await supabase.from('user_teams').select('team_id').eq('user_id', user.id).single();
         if (ut) {
@@ -57,48 +56,39 @@ export default function PlayerDetails({ route, navigation }) {
         }
       }
 
-      if (!team) {
-        Alert.alert('Error', 'No team found! Please select a team first.');
-        return;
-      }
+      if (!team) { Alert.alert('Error', 'No team found! Please select a team first.'); return; }
 
-      // 2. Check if player already bought by any team (or specifically this team)
+      // 2. Check if player already purchased (by any team)
       const { data: existing } = await supabase
-        .from('purchases')
-        .select('id')
-        .eq('player_id', player.id);
-
+        .from('purchases').select('id').eq('player_id', player.id);
       if (existing && existing.length > 0) {
-        Alert.alert('Sold Out', `${player.name} has already been purchased.`);
+        Alert.alert('Already Sold', `${player.name} has already been purchased.`);
         return;
       }
 
-      // 3. Calculate remaining budget
+      // 3. Check budget
       const { data: prevPurchases } = await supabase
         .from('purchases').select('price').eq('team_id', team.id);
       const spent = (prevPurchases || []).reduce((a, b) => a + b.price, 0);
       const remaining = team.budget - spent;
 
       if (remaining < auctionPrice) {
-        Alert.alert(
-          'Insufficient Budget',
-          'Check your current bidding balance amount'
-        );
+        Alert.alert('Insufficient Budget', 'You do not have enough budget to buy this player.');
         return;
       }
 
-      // 4. Insert purchase (DB handles created_at automatically)
+      // 4. Insert purchase
       const { error: insertErr } = await supabase.from('purchases').insert({
-        team_id: team.id,
+        team_id:   team.id,
         player_id: player.id,
-        price: auctionPrice,
+        price:     auctionPrice,
       });
       if (insertErr) throw insertErr;
 
       Alert.alert(
         '✅ Purchase Successful!',
         `${player.name} bought for ${formatCurrency(auctionPrice)}\nRemaining Budget: ${formatCurrency(remaining - auctionPrice)}`,
-        [{ text: 'OK', onPress: () => navigation.navigate('View Players') }] 
+        [{ text: 'OK', onPress: () => navigation.navigate('View Players') }]
       );
     } catch (err) {
       Alert.alert('Error', err.message);
@@ -107,13 +97,18 @@ export default function PlayerDetails({ route, navigation }) {
     }
   };
 
+  // Stats grid — show only relevant fields
+  const isWK       = player.role === 'Wicketkeeper Batsman';
+  const isBowler   = player.role === 'Bowler' || player.role === 'All-Rounder';
+  const isBatsman  = player.role !== 'Bowler';
+
   return (
     <SafeAreaView style={globalStyles.container}>
       <ScrollView contentContainerStyle={{ padding: 20 }}>
-        {/* Back button — always goes back to View Players */}
+        {/* Back button */}
         <TouchableOpacity
           style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}
-          onPress={() => navigation.navigate('View Players')} 
+          onPress={() => navigation.navigate('View Players')}
         >
           <MaterialCommunityIcons name="arrow-left" size={24} color={colors.primary} />
           <Text style={{ color: colors.primary, marginLeft: 6, fontWeight: 'bold', fontSize: 16 }}>
@@ -121,49 +116,93 @@ export default function PlayerDetails({ route, navigation }) {
           </Text>
         </TouchableOpacity>
 
-        {/* Player Header Card */}
-        <View style={[globalStyles.card, { alignItems: 'center', paddingVertical: 28, marginBottom: 20 }]}>
-          <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center', marginBottom: 15 }}>
-            <MaterialCommunityIcons name="account-cricket" size={48} color={colors.primary} />
+        {/* Player Header */}
+        <View style={[globalStyles.card, { alignItems: 'center', paddingVertical: 28, marginBottom: 16 }]}>
+          {/* Category badge */}
+          <View style={{
+            width: 64, height: 64, borderRadius: 32,
+            backgroundColor: catColor + '20',
+            borderWidth: 3, borderColor: catColor,
+            justifyContent: 'center', alignItems: 'center',
+            marginBottom: 12,
+          }}>
+            <Text style={{ fontSize: 28, fontWeight: 'bold', color: catColor }}>{category}</Text>
           </View>
-          <Text style={{ fontSize: 26, fontWeight: 'bold', color: colors.primary }}>{player.name}</Text>
-          <Text style={{ fontSize: 15, color: colors.textLight, marginTop: 6 }}>
-            {player.role || '—'} • Category {player.category || '—'}
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.primary, textAlign: 'center' }}>
+            {player.name}
+          </Text>
+          <Text style={{ fontSize: 14, color: colors.textLight, marginTop: 6 }}>
+            {player.role || '—'}
+          </Text>
+          {/* Category label */}
+          <View style={{
+            marginTop: 10, borderRadius: 20,
+            paddingHorizontal: 18, paddingVertical: 6,
+            backgroundColor: catColor,
+          }}>
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14 }}>
+              Category {category}
+            </Text>
+          </View>
+          <Text style={{ color: colors.textLight, fontSize: 11, marginTop: 8 }}>
+            Performance Score: {score.toFixed(1)}
           </Text>
         </View>
 
-        {/* Stats */}
-        <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.primary, marginBottom: 10 }}>Statistics</Text>
-        <View style={{ flexDirection: 'row', marginBottom: 16 }}>
-          <View style={[globalStyles.card, { flex: 1, marginRight: 5, alignItems: 'center' }]}>
-            <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.text }}>{player.matches || 0}</Text>
-            <Text style={{ color: colors.textLight, fontSize: 12 }}>Matches</Text>
-          </View>
-          <View style={[globalStyles.card, { flex: 1, marginHorizontal: 5, alignItems: 'center' }]}>
-            <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.text }}>{player.runs || 0}</Text>
-            <Text style={{ color: colors.textLight, fontSize: 12 }}>Runs</Text>
-          </View>
-          <View style={[globalStyles.card, { flex: 1, marginLeft: 5, alignItems: 'center' }]}>
-            <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.text }}>{player.wickets || 0}</Text>
-            <Text style={{ color: colors.textLight, fontSize: 12 }}>Wickets</Text>
-          </View>
+        {/* Stats Cards */}
+        <Text style={{ fontSize: 15, fontWeight: 'bold', color: colors.primary, marginBottom: 10 }}>
+          Statistics
+        </Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 4, marginHorizontal: -4 }}>
+          {[
+            { label: 'Matches', value: player.matches ?? '—' },
+            isBatsman && { label: 'Runs', value: player.runs ?? '—' },
+            isBatsman && { label: 'Strike Rate', value: player.strike_rate ?? '—' },
+            isBowler  && { label: 'Wickets', value: player.wickets ?? '—' },
+            isBowler  && { label: 'Economy', value: player.economy ?? '—' },
+            isWK      && { label: 'Stumpings', value: player.stumps ?? '—' },
+            isWK      && { label: 'Catches', value: player.catches ?? '—' },
+          ].filter(Boolean).map((stat, idx) => (
+            <View key={idx} style={[globalStyles.card, {
+              width: '30%', marginHorizontal: '1.5%', alignItems: 'center',
+              paddingVertical: 12, marginVertical: 4,
+            }]}>
+              <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.text }}>
+                {stat.value}
+              </Text>
+              <Text style={{ color: colors.textLight, fontSize: 11, textAlign: 'center', marginTop: 2 }}>
+                {stat.label}
+              </Text>
+            </View>
+          ))}
         </View>
 
         {/* Pricing */}
-        <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.primary, marginBottom: 10 }}>Pricing</Text>
-        <View style={globalStyles.card}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-            <Text style={{ color: colors.textLight }}>AI Predicted Price</Text>
-            <Text style={{ fontWeight: 'bold', color: '#27ae60' }}>{formatCurrency(predictedPrice)}</Text>
+        <Text style={{ fontSize: 15, fontWeight: 'bold', color: colors.primary, marginBottom: 10, marginTop: 8 }}>
+          Pricing
+        </Text>
+        <View style={[globalStyles.card, { padding: 16 }]}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+            <Text style={{ color: colors.textLight }}>Category Base Price</Text>
+            <Text style={{ fontWeight: '600', color: catColor }}>{formatCurrency(basePrice)}</Text>
           </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10 }}>
-            <Text style={{ color: colors.textLight }}>Auction Price</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+            <Text style={{ color: colors.textLight }}>Predicted Auction Price</Text>
+            <Text style={{ fontWeight: '600', color: colors.success }}>{formatCurrency(predicted)}</Text>
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 }}>
+            <Text style={{ color: colors.text, fontWeight: '600' }}>Auction Price</Text>
             <Text style={{ fontWeight: 'bold', color: colors.primary, fontSize: 18 }}>{formatCurrency(auctionPrice)}</Text>
           </View>
         </View>
 
+        {/* Buy Button */}
         <TouchableOpacity
-          style={[globalStyles.button, { marginTop: 24, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }]}
+          style={[globalStyles.button, {
+            marginTop: 24,
+            flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+            backgroundColor: catColor,
+          }]}
           onPress={handleBuyPlayer}
           disabled={loading}
         >
@@ -172,8 +211,7 @@ export default function PlayerDetails({ route, navigation }) {
             : <>
                 <MaterialCommunityIcons name="cart-plus" size={20} color={colors.white} style={{ marginRight: 8 }} />
                 <Text style={globalStyles.buttonText}>Buy Player</Text>
-              </>
-          }
+              </>}
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

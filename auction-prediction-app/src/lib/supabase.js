@@ -11,5 +11,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    flowType: 'implicit',   // avoids PKCE code_verifier issues on React Native
   },
 });

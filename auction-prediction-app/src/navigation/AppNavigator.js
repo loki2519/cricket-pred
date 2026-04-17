@@ -16,10 +16,10 @@ const Stack = createStackNavigator();
 
 export default function AppNavigator() {
   const [showSplash, setShowSplash] = useState(true);
-  const [session, setSession] = useState(null);
-  const [role, setRole] = useState(null);
-  const [teamInfo, setTeamInfo] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [session, setSession]       = useState(null);
+  const [role, setRole]             = useState(null);
+  const [teamInfo, setTeamInfo]     = useState(null);
+  const [loading, setLoading]       = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -28,7 +28,7 @@ export default function AppNavigator() {
       else setLoading(false);
     });
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session) handleSession(session);
       else {
@@ -37,6 +37,8 @@ export default function AppNavigator() {
         setLoading(false);
       }
     });
+
+    return () => subscription?.unsubscribe();
   }, []);
 
   const handleSession = async (session) => {
@@ -65,13 +67,16 @@ export default function AppNavigator() {
     }
   };
 
-  // Show splash first (animation handles its own timing and calls onFinish)
   if (showSplash) {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
   if (loading) {
-    return <View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator size="large" /></View>;
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
   }
 
   return (
@@ -79,8 +84,8 @@ export default function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!session ? (
           <>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="Login"          component={LoginScreen} />
+            <Stack.Screen name="Register"       component={RegisterScreen} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           </>
         ) : role === 'admin' ? (
@@ -92,7 +97,7 @@ export default function AppNavigator() {
         ) : (
           <>
             <Stack.Screen name="SelectTeam" component={SelectTeamScreen} />
-            <Stack.Screen name="MainDrawer" component={UserDrawer} />
+            <Stack.Screen name="MainDrawer"  component={UserDrawer} />
           </>
         )}
       </Stack.Navigator>

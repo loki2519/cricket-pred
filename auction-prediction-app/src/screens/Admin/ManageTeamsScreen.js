@@ -1,23 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, SafeAreaView, TextInput, TouchableOpacity, Alert, ScrollView, Modal, ActivityIndicator } from 'react-native';
+import {
+  View, Text, TextInput, TouchableOpacity,
+  Alert, ScrollView, Modal, ActivityIndicator, Image,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { globalStyles, colors } from '../../styles/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function ManageTeamsScreen() {
-  const [teams, setTeams] = useState([]);
-  const [name, setName] = useState('');
-  const [budget, setBudget] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [editModal, setEditModal] = useState(false);
-  const [editTeam, setEditTeam] = useState(null);
-  const [editName, setEditName] = useState('');
+  const [teams, setTeams]           = useState([]);
+  const [name, setName]             = useState('');
+  const [budget, setBudget]         = useState('');
+  const [loading, setLoading]       = useState(false);
+  const [editModal, setEditModal]   = useState(false);
+  const [editTeam, setEditTeam]     = useState(null);
+  const [editName, setEditName]     = useState('');
   const [editBudget, setEditBudget] = useState('');
 
   useEffect(() => { fetchTeams(); }, []);
 
   const fetchTeams = async () => {
-    const { data, error } = await supabase.from('teams').select('*').order('name');
+    // Fetch teams including logo_url so we can display the franchise logo
+    const { data, error } = await supabase
+      .from('teams')
+      .select('id, name, budget, logo_url')
+      .order('name');
     if (!error) setTeams(data || []);
   };
 
@@ -25,8 +33,8 @@ export default function ManageTeamsScreen() {
     if (!name.trim()) return Alert.alert('Error', 'Team name is required');
     setLoading(true);
     const { error } = await supabase.from('teams').insert([{
-      name: name.trim(),
-      budget: parseInt(budget) || 100000000
+      name:   name.trim(),
+      budget: parseInt(budget) || 100000000,
     }]);
     setLoading(false);
     if (error) Alert.alert('Error', error.message);
@@ -52,16 +60,13 @@ export default function ManageTeamsScreen() {
       .eq('id', editTeam.id);
     setLoading(false);
     if (error) Alert.alert('Error', error.message);
-    else {
-      setEditModal(false);
-      fetchTeams();
-    }
+    else { setEditModal(false); fetchTeams(); }
   };
 
   const handleDelete = (team) => {
     Alert.alert(
       'Delete Team',
-      `Are you sure you want to delete "${team.name}"?\n\nThis will permanently remove the team. (Purchases and assignments will be handled by DB cascade).`,
+      `Are you sure you want to delete "${team.name}"?\n\nThis permanently removes the team and all related data.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -69,26 +74,20 @@ export default function ManageTeamsScreen() {
           onPress: async () => {
             setLoading(true);
             try {
-              // Step 1: Delete from purchases for this team
               const { error: pErr } = await supabase.from('purchases').delete().eq('team_id', team.id);
               if (pErr) throw pErr;
-
-              // Step 2: Delete from user_teams for this team
               const { error: uErr } = await supabase.from('user_teams').delete().eq('team_id', team.id);
               if (uErr) throw uErr;
-
-              // Step 3: Delete the team itself
               const { error } = await supabase.from('teams').delete().eq('id', team.id);
               if (error) throw error;
-
               fetchTeams();
             } catch (err) {
               Alert.alert('Error', err.message);
             } finally {
               setLoading(false);
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -102,7 +101,9 @@ export default function ManageTeamsScreen() {
 
         {/* Add Team */}
         <View style={globalStyles.card}>
-          <Text style={{ fontWeight: 'bold', color: colors.primary, marginBottom: 12, fontSize: 16 }}>Add New Team</Text>
+          <Text style={{ fontWeight: 'bold', color: colors.primary, marginBottom: 12, fontSize: 16 }}>
+            Add New Team
+          </Text>
           <Text style={{ color: colors.text, marginBottom: 4 }}>Team Name *</Text>
           <TextInput style={globalStyles.input} placeholder="e.g. Mumbai Indians" value={name} onChangeText={setName} />
           <Text style={{ color: colors.text, marginBottom: 4 }}>Budget (₹)</Text>
@@ -119,13 +120,41 @@ export default function ManageTeamsScreen() {
         {teams.map((item) => (
           <View key={item.id} style={[globalStyles.card, { marginBottom: 10 }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
-                <MaterialCommunityIcons name="shield" size={24} color={colors.primary} />
+              {/* Team Logo — shows uploaded image or fallback shield icon */}
+              <View style={{
+                width: 52, height: 52, borderRadius: 26,
+                backgroundColor: colors.background,
+                borderWidth: 1.5, borderColor: colors.border,
+                justifyContent: 'center', alignItems: 'center',
+                marginRight: 12, overflow: 'hidden',
+              }}>
+                {item.logo_url ? (
+                  <Image
+                    source={{ uri: item.logo_url }}
+                    style={{ width: 52, height: 52, borderRadius: 26 }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <MaterialCommunityIcons name="shield" size={28} color={colors.primary} />
+                )}
               </View>
+
+              {/* Team info */}
               <View style={{ flex: 1 }}>
-                <Text style={{ fontWeight: 'bold', color: colors.text, fontSize: 15 }} numberOfLines={1}>{item.name}</Text>
-                <Text style={{ color: colors.textLight, fontSize: 13, marginTop: 2 }}>Budget: {formatCurrency(item.budget)}</Text>
+                <Text style={{ fontWeight: 'bold', color: colors.text, fontSize: 15 }} numberOfLines={1}>
+                  {item.name}
+                </Text>
+                <Text style={{ color: colors.textLight, fontSize: 13, marginTop: 2 }}>
+                  Budget: {formatCurrency(item.budget)}
+                </Text>
+                {item.logo_url ? (
+                  <Text style={{ color: colors.success, fontSize: 11, marginTop: 2 }}>✓ Logo set by manager</Text>
+                ) : (
+                  <Text style={{ color: colors.textLight, fontSize: 11, marginTop: 2 }}>No logo uploaded yet</Text>
+                )}
               </View>
+
+              {/* Edit / Delete buttons */}
               <TouchableOpacity onPress={() => openEdit(item)} style={{ padding: 8, marginRight: 4 }}>
                 <MaterialCommunityIcons name="pencil" size={22} color={colors.primary} />
               </TouchableOpacity>
@@ -145,7 +174,7 @@ export default function ManageTeamsScreen() {
             <Text style={{ color: colors.text, marginBottom: 4 }}>Team Name</Text>
             <TextInput style={globalStyles.input} value={editName} onChangeText={setEditName} />
             <Text style={{ color: colors.text, marginBottom: 4 }}>Budget (₹)</Text>
-            <TextInput style={globalStyles.input} keyboardType="numeric" value={editBudget} onChangeText={setBudget} />
+            <TextInput style={globalStyles.input} keyboardType="numeric" value={editBudget} onChangeText={setEditBudget} />
             <TouchableOpacity style={globalStyles.button} onPress={handleEdit} disabled={loading}>
               {loading ? <ActivityIndicator color={colors.white} /> : <Text style={globalStyles.buttonText}>Save Changes</Text>}
             </TouchableOpacity>

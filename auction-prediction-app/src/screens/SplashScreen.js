@@ -43,12 +43,12 @@ export default function SplashScreen({ onFinish }) {
       <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
         <TouchableOpacity onPress={handleIconPress} activeOpacity={0.8}>
           <Animated.View style={[styles.logoContainer, { transform: [{ rotateY: rotateY }] }]}>
-            <MaterialCommunityIcons name="cricket" size={80} color="#D4AF37" />
+            <MaterialCommunityIcons name="cricket" size={80} color="#FF6600" />
           </Animated.View>
         </TouchableOpacity>
         <Text style={styles.title}>AuctionOracle</Text>
         {isAnimating && (
-          <ActivityIndicator size="large" color="#D4AF37" style={{ marginTop: 40 }} />
+          <ActivityIndicator size="large" color="#FF6600" style={{ marginTop: 40 }} />
         )}
       </Animated.View>
     </View>
@@ -58,7 +58,7 @@ export default function SplashScreen({ onFinish }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000033', // Deep Navy to match app headers
+    backgroundColor: '#FFFFFF', // White background for splash
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -67,12 +67,12 @@ const styles = StyleSheet.create({
     height: 150, 
     borderRadius: 75, 
     borderWidth: 3, 
-    borderColor: '#D4AF37', 
+    borderColor: '#FF6600', 
     justifyContent: 'center', 
     alignItems: 'center',
     marginBottom: 20,
-    backgroundColor: '#000033',
-    shadowColor: '#D4AF37',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#FF6600',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 10,
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 40,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#FF6600',
     letterSpacing: 2,
   },
 });

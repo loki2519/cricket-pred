@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, SafeAreaView, TouchableOpacity,
+  View, Text, TouchableOpacity,
   ActivityIndicator, ScrollView, FlatList, Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
 import { colors, globalStyles } from '../../styles/theme';
@@ -12,7 +13,7 @@ const ROLE_CONFIG = {
   'Batsman':             { color: colors.accent,       icon: 'cricket',         label: 'Batsmen' },
   'Bowler':              { color: colors.secondary,    icon: 'tennis-ball',     label: 'Bowlers' },
   'All-Rounder':         { color: colors.pitchBrown,   icon: null,              label: 'All-Rounders' },
-  'Wicketkeeper Batsman':{ color: colors.cricketGreen, icon: 'baseball-glove',  label: 'Keepers' },
+  'Wicketkeeper Batsman':{ color: colors.cricketGreen, icon: 'hand-wave',        label: 'Keepers' },
 };
 
 function RoleIcon({ role, size = 22, color }) {

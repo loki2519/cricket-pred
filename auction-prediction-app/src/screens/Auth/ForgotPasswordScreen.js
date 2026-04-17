@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  Alert, SafeAreaView, ActivityIndicator
+  Alert, ActivityIndicator
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { colors, globalStyles } from '../../styles/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';

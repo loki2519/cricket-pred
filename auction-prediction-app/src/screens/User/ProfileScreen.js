@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, SafeAreaView, TouchableOpacity,
-  Alert, Image, ScrollView,
+  View, Text, TouchableOpacity,
+  Alert, Image, ScrollView, ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../lib/supabase';
 import { colors, globalStyles } from '../../styles/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { setProfileImage, getProfileImage, initProfileImage } from '../../lib/profileImageStore';
+import {
+  setProfileImage, getProfileImage, initProfileImage,
+  uploadLogoToSupabase,
+} from '../../lib/profileImageStore';
 
-export default function ProfileScreen({ teamName }) {
+export default function ProfileScreen({ teamName, teamId }) {
   const [userEmail, setUserEmail] = useState('');
-  const [logoUri, setLogoUri] = useState(getProfileImage());
+  const [logoUri, setLogoUri]     = useState(getProfileImage());
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -34,10 +39,26 @@ export default function ProfileScreen({ teamName }) {
       aspect: [1, 1],
       quality: 0.8,
     });
+
     if (!result.canceled && result.assets?.length > 0) {
       const uri = result.assets[0].uri;
       setLogoUri(uri);
-      await setProfileImage(uri);   // saves to store + AsyncStorage
+      await setProfileImage(uri);  // saves locally
+
+      // Upload to Supabase Storage and sync to admin panel
+      if (teamId) {
+        setUploading(true);
+        const publicUrl = await uploadLogoToSupabase(uri, teamId);
+        setUploading(false);
+        if (publicUrl) {
+          Alert.alert('Logo Updated', 'Your team logo has been saved and is now visible in the admin panel.');
+        } else {
+          Alert.alert(
+            'Saved Locally',
+            'Logo saved on your device, but could not sync to the server. Check your internet connection.',
+          );
+        }
+      }
     }
   };
 
@@ -53,9 +74,9 @@ export default function ProfileScreen({ teamName }) {
       <ScrollView contentContainerStyle={{ padding: 24 }}>
         <Text style={[globalStyles.title, { marginBottom: 24 }]}>My Profile</Text>
 
-        {/* Logo */}
+        {/* Logo picker */}
         <View style={{ alignItems: 'center', marginBottom: 30 }}>
-          <TouchableOpacity onPress={pickLogo}>
+          <TouchableOpacity onPress={pickLogo} disabled={uploading}>
             {logoUri ? (
               <Image
                 source={{ uri: logoUri }}
@@ -70,15 +91,18 @@ export default function ProfileScreen({ teamName }) {
                 <MaterialCommunityIcons name="shield-account" size={56} color={colors.primary} />
               </View>
             )}
+            {/* Camera badge */}
             <View style={{
               position: 'absolute', bottom: 4, right: 4,
               backgroundColor: colors.primary, borderRadius: 14, padding: 4,
             }}>
-              <MaterialCommunityIcons name="camera" size={16} color={colors.white} />
+              {uploading
+                ? <ActivityIndicator size="small" color={colors.white} />
+                : <MaterialCommunityIcons name="camera" size={16} color={colors.white} />}
             </View>
           </TouchableOpacity>
-          <Text style={{ color: colors.textLight, fontSize: 12, marginTop: 10 }}>
-            Tap to change logo • appears in the navbar
+          <Text style={{ color: colors.textLight, fontSize: 12, marginTop: 10, textAlign: 'center' }}>
+            {uploading ? 'Uploading logo…' : 'Tap to change logo • syncs to admin panel'}
           </Text>
         </View>
 

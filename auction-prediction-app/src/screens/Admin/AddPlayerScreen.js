@@ -1,45 +1,21 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  Alert, SafeAreaView, ScrollView,
+  Alert, ScrollView, ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { colors, globalStyles } from '../../styles/theme';
+import {
+  getAutoCategory,
+  computePerformanceScore,
+  classifyCategory,
+  CATEGORY_COLORS,
+  CATEGORY_BASE_PRICE,
+  computePredictedPrice,
+} from '../../lib/playerCategory';
 
 const ROLES = ['Batsman', 'Bowler', 'All-Rounder', 'Wicketkeeper Batsman'];
-
-function calculateCategory(matches, runs, strikeRate) {
-  const m = parseInt(matches) || 0;
-  const r = parseInt(runs) || 0;
-  const sr = parseFloat(strikeRate) || 0;
-  if (m >= 120) return 'A';
-  if ((r >= 4000 && sr >= 135) || (r >= 1800 && sr >= 125)) return 'B';
-  return 'C';
-}
-
-function computeScore(role, { matches, runs, wickets, economy, strikeRate, stumps, catches }) {
-  const m   = parseFloat(matches)    || 0;
-  const r   = parseFloat(runs)       || 0;
-  const w   = parseFloat(wickets)    || 0;
-  const eco = parseFloat(economy)    || 0;
-  const sr  = parseFloat(strikeRate) || 0;
-  const st  = parseFloat(stumps)     || 0;
-  const ct  = parseFloat(catches)    || 0;
-
-  if (role === 'Batsman')              return (r / 100) + (sr * 0.5) + (m * 0.5);
-  if (role === 'Bowler')               return (w * 2) - (eco * 5) + (m * 0.5);
-  if (role === 'All-Rounder')          return (r / 150) + (w * 2) - (eco * 4) + (sr * 0.3) + (m * 0.5);
-  if (role === 'Wicketkeeper Batsman') return (r / 100) + (sr * 0.5) + (m * 0.5) + (st * 1.5) + (ct * 0.8);
-  return 0;
-}
-
-function getPredictedPrice(role, inputs) {
-  const score = computeScore(role, inputs);
-  const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-  if (score > 80) return rand(30000000, 40000000);
-  if (score > 40) return rand(15000000, 30000000);
-  return rand(8000000, 15000000);
-}
 
 export default function AddPlayerScreen({ navigation }) {
   const [form, setForm] = useState({
@@ -48,45 +24,62 @@ export default function AddPlayerScreen({ navigation }) {
     stumps: '', catches: '',
   });
   const [selectedRole, setSelectedRole] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]           = useState(false);
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
-  const isBatType = selectedRole === 'Batsman' || selectedRole === 'All-Rounder' || selectedRole === 'Wicketkeeper Batsman';
+  // ── Derived values (live, no button needed) ──────────────────
+  const statsForCalc = {
+    matches:    form.matches,
+    runs:       form.runs,
+    strikeRate: form.strikeRate,
+    wickets:    form.wickets,
+    economy:    form.economy,
+    catches:    form.catches,
+    stumps:     form.stumps,
+  };
+  // Only compute category once the user has typed at least one stat
+  const hasStats = !!(form.matches || form.runs || form.wickets ||
+                      form.strikeRate || form.economy || form.stumps || form.catches);
+  const score        = (selectedRole && hasStats) ? computePerformanceScore(selectedRole, statsForCalc) : null;
+  const autoCategory = (selectedRole && hasStats) ? classifyCategory(score) : null;
+  const catColor     = autoCategory ? (CATEGORY_COLORS[autoCategory] || colors.textLight) : colors.border;
+  const basePrice    = autoCategory ? (CATEGORY_BASE_PRICE[autoCategory] || 0) : 0;
+
+  // Role-specific field visibility
+  const isBatType      = ['Batsman', 'All-Rounder', 'Wicketkeeper Batsman'].includes(selectedRole);
   const showRuns        = isBatType;
   const showStrikeRate  = isBatType;
-  const showWickets     = selectedRole === 'Bowler' || selectedRole === 'All-Rounder';
-  const showEconomy     = selectedRole === 'Bowler' || selectedRole === 'All-Rounder';
+  const showWickets     = ['Bowler', 'All-Rounder'].includes(selectedRole);
+  const showEconomy     = ['Bowler', 'All-Rounder'].includes(selectedRole);
   const showStumps      = selectedRole === 'Wicketkeeper Batsman';
   const showCatches     = selectedRole === 'Wicketkeeper Batsman';
 
-  const autoCategory = calculateCategory(form.matches, form.runs, form.strikeRate);
-
   const handleAdd = async () => {
-    if (!form.name.trim())        return Alert.alert('Error', 'Player name is required');
-    if (!selectedRole)            return Alert.alert('Error', 'Please select a role');
-    if (!form.auctionPrice.trim()) return Alert.alert('Auction Price Required', 'Please enter the Auction Price in ₹');
+    if (!form.name.trim()) return Alert.alert('Error', 'Player name is required');
+    if (!selectedRole)     return Alert.alert('Error', 'Please select a role');
+    if (!hasStats)         return Alert.alert('Error', 'Please enter at least one stat (matches, runs, wickets, etc.) so the category can be calculated from the formula.');
+
+    const finalCategory = getAutoCategory(selectedRole, statsForCalc);
+    const finalScore    = computePerformanceScore(selectedRole, statsForCalc);
+    const auctionPrice  = form.auctionPrice
+      ? parseInt(form.auctionPrice)
+      : CATEGORY_BASE_PRICE[finalCategory];
 
     setLoading(true);
-    const predictedPrice = getPredictedPrice(selectedRole, form);
-    const auctionPrice   = parseInt(form.auctionPrice);
-
     const payload = {
-      name:         form.name.trim(),
-      role:         selectedRole,
-      matches:      parseInt(form.matches)      || 0,
-      runs:         parseInt(form.runs)         || 0,
-      wickets:      parseInt(form.wickets)      || 0,
-      economy:      parseFloat(form.economy)    || 0.0,
-      strike_rate:  parseFloat(form.strikeRate) || 0.0,
-      category:     autoCategory,
-      price:        auctionPrice,
+      name:        form.name.trim(),
+      role:        selectedRole,
+      matches:     parseInt(form.matches)      || 0,
+      runs:        parseInt(form.runs)         || 0,
+      wickets:     parseInt(form.wickets)      || 0,
+      economy:     parseFloat(form.economy)    || 0.0,
+      strike_rate: parseFloat(form.strikeRate) || 0.0,
+      category:    finalCategory,
+      price:       auctionPrice,
     };
-
-    if (selectedRole === 'Wicketkeeper Batsman') {
-      payload.stumps  = parseInt(form.stumps)  || 0;
-      payload.catches = parseInt(form.catches) || 0;
-    }
+    if (showStumps)  payload.stumps  = parseInt(form.stumps)  || 0;
+    if (showCatches) payload.catches = parseInt(form.catches) || 0;
 
     const { error } = await supabase.from('players').insert([payload]);
     setLoading(false);
@@ -95,14 +88,13 @@ export default function AddPlayerScreen({ navigation }) {
       Alert.alert('Error', error.message);
     } else {
       Alert.alert(
-        'Player Added!',
-        `Category: ${autoCategory}\nAuction Price: ₹${auctionPrice.toLocaleString('en-IN')}\nPredicted Price: ₹${predictedPrice.toLocaleString('en-IN')}`,
+        '✅ Player Added!',
+        `Category: ${finalCategory}\nScore: ${finalScore.toFixed(1)}\nBase Price: ₹${CATEGORY_BASE_PRICE[finalCategory].toLocaleString('en-IN')}`,
       );
       navigation.goBack();
     }
   };
 
-  // Role button grid (2 per row)
   const roleRows = [ROLES.slice(0, 2), ROLES.slice(2)];
 
   return (
@@ -120,7 +112,7 @@ export default function AddPlayerScreen({ navigation }) {
             onChangeText={v => set('name', v)}
           />
 
-          {/* Role — 2×2 grid */}
+          {/* Role Grid */}
           <Text style={{ color: colors.text, marginBottom: 6 }}>Role *</Text>
           {roleRows.map((row, ri) => (
             <View key={ri} style={{ flexDirection: 'row', marginBottom: 8, gap: 8 }}>
@@ -147,118 +139,123 @@ export default function AddPlayerScreen({ navigation }) {
 
           {/* Matches */}
           <Text style={{ color: colors.text, marginBottom: 4, marginTop: 4 }}>Matches</Text>
-          <TextInput
-            style={globalStyles.input} placeholder="e.g. 150" keyboardType="numeric"
-            value={form.matches} onChangeText={v => set('matches', v)}
-          />
+          <TextInput style={globalStyles.input} placeholder="e.g. 150" keyboardType="numeric"
+            value={form.matches} onChangeText={v => set('matches', v)} />
 
-          {/* Runs (Batsman / All-Rounder / WK) */}
           {showRuns && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Runs</Text>
-            <TextInput
-              style={globalStyles.input} placeholder="e.g. 5000" keyboardType="numeric"
-              value={form.runs} onChangeText={v => set('runs', v)}
-            />
+            <TextInput style={globalStyles.input} placeholder="e.g. 5000" keyboardType="numeric"
+              value={form.runs} onChangeText={v => set('runs', v)} />
           </>}
 
-          {/* Strike Rate */}
           {showStrikeRate && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Strike Rate</Text>
-            <TextInput
-              style={globalStyles.input} placeholder="e.g. 140.5" keyboardType="numeric"
-              value={form.strikeRate} onChangeText={v => set('strikeRate', v)}
-            />
+            <TextInput style={globalStyles.input} placeholder="e.g. 140.5" keyboardType="numeric"
+              value={form.strikeRate} onChangeText={v => set('strikeRate', v)} />
           </>}
 
-          {/* Wickets (Bowler / All-Rounder) */}
           {showWickets && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Wickets</Text>
-            <TextInput
-              style={globalStyles.input} placeholder="e.g. 30" keyboardType="numeric"
-              value={form.wickets} onChangeText={v => set('wickets', v)}
-            />
+            <TextInput style={globalStyles.input} placeholder="e.g. 80" keyboardType="numeric"
+              value={form.wickets} onChangeText={v => set('wickets', v)} />
           </>}
 
-          {/* Economy (Bowler / All-Rounder) */}
           {showEconomy && <>
-            <Text style={{ color: colors.text, marginBottom: 4 }}>Economy</Text>
-            <TextInput
-              style={globalStyles.input} placeholder="e.g. 7.8" keyboardType="numeric"
-              value={form.economy} onChangeText={v => set('economy', v)}
-            />
+            <Text style={{ color: colors.text, marginBottom: 4 }}>Economy Rate</Text>
+            <TextInput style={globalStyles.input} placeholder="e.g. 7.5" keyboardType="numeric"
+              value={form.economy} onChangeText={v => set('economy', v)} />
           </>}
 
-          {/* Stumps — WK only */}
           {showStumps && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Stumpings 🧤</Text>
-            <TextInput
-              style={globalStyles.input} placeholder="e.g. 45" keyboardType="numeric"
-              value={form.stumps} onChangeText={v => set('stumps', v)}
-            />
+            <TextInput style={globalStyles.input} placeholder="e.g. 45" keyboardType="numeric"
+              value={form.stumps} onChangeText={v => set('stumps', v)} />
           </>}
 
-          {/* Catches — WK only */}
           {showCatches && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Catches 🧤</Text>
-            <TextInput
-              style={globalStyles.input} placeholder="e.g. 90" keyboardType="numeric"
-              value={form.catches} onChangeText={v => set('catches', v)}
-            />
+            <TextInput style={globalStyles.input} placeholder="e.g. 90" keyboardType="numeric"
+              value={form.catches} onChangeText={v => set('catches', v)} />
           </>}
 
-          {/* Category — auto */}
+          {/* ── Category — always shown, auto-selected by formula ── */}
           <Text style={{ color: colors.text, marginBottom: 8, marginTop: 4 }}>Category (auto-calculated)</Text>
-          <View style={{ marginBottom: 6 }}>
-            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
-              {['A', 'B'].map(cat => (
+
+          {/* Row 1: A and B */}
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+            {['A', 'B'].map(cat => {
+              const active = autoCategory === cat;
+              const col = active
+                ? (cat === 'A' ? '#16A34A' : '#F97316')
+                : colors.border;
+              return (
                 <View key={cat} style={{
-                  flex: 1, paddingVertical: 8, borderRadius: 20, alignItems: 'center',
-                  backgroundColor: autoCategory === cat ? colors.primary : colors.background,
-                  borderWidth: 1, borderColor: colors.primary,
+                  flex: 1, paddingVertical: 14, borderRadius: 10,
+                  alignItems: 'center',
+                  backgroundColor: active ? col : colors.background,
+                  borderWidth: 2, borderColor: col,
                 }}>
-                  <Text style={{ color: autoCategory === cat ? colors.white : colors.primary, fontWeight: 'bold' }}>
+                  <Text style={{
+                    fontWeight: 'bold', fontSize: 16,
+                    color: active ? colors.white : colors.textLight,
+                  }}>
                     Category {cat}
                   </Text>
                 </View>
-              ))}
-            </View>
-            <View style={{ alignItems: 'center' }}>
-              <View style={{
-                width: '48%', paddingVertical: 8, borderRadius: 20, alignItems: 'center',
-                backgroundColor: autoCategory === 'C' ? colors.primary : colors.background,
-                borderWidth: 1, borderColor: colors.primary,
-              }}>
-                <Text style={{ color: autoCategory === 'C' ? colors.white : colors.primary, fontWeight: 'bold' }}>
-                  Category C
-                </Text>
-              </View>
-            </View>
+              );
+            })}
           </View>
-          <Text style={{ color: colors.textLight, fontSize: 12, marginBottom: 16 }}>
-            {parseInt(form.matches) >= 120 ? '✅ Matches ≥ 120 → A' : autoCategory === 'B' ? '✅ Runs + SR → B' : '📌 Default → C'}
+
+          {/* Row 2: C centered */}
+          <View style={{ alignItems: 'center', marginBottom: 4 }}>
+            {(() => {
+              const active = autoCategory === 'C';
+              const col = active ? '#DC2626' : colors.border;
+              return (
+                <View style={{
+                  width: '50%', paddingVertical: 14, borderRadius: 10,
+                  alignItems: 'center',
+                  backgroundColor: active ? col : colors.background,
+                  borderWidth: 2, borderColor: col,
+                }}>
+                  <Text style={{
+                    fontWeight: 'bold', fontSize: 16,
+                    color: active ? colors.white : colors.textLight,
+                  }}>
+                    Category C
+                  </Text>
+                </View>
+              );
+            })()}
+          </View>
+
+          {/* Score hint below blocks */}
+          <Text style={{ color: colors.textLight, fontSize: 12, textAlign: 'center', marginBottom: 16 }}>
+            {hasStats && autoCategory
+              ? `Score: ${score.toFixed(1)}  •  ${autoCategory === 'A' ? 'Score ≥ 100' : autoCategory === 'B' ? 'Score 60–99' : 'Score < 60'}  •  Base ₹${(CATEGORY_BASE_PRICE[autoCategory] || 0).toLocaleString('en-IN')}`
+              : 'Enter stats above — category is calculated automatically'}
           </Text>
 
-          {/* Auction Price */}
+          {/* Auction Price (optional override) */}
           <Text style={{ color: colors.text, marginBottom: 4 }}>
-            Auction Price (₹) <Text style={{ color: colors.error }}>*</Text>
+            Auction Price (₹) <Text style={{ color: colors.textLight, fontSize: 11 }}>(leave blank to use base price)</Text>
           </Text>
           <TextInput
-            style={[globalStyles.input, { borderColor: form.auctionPrice ? colors.border : colors.error }]}
-            placeholder="Required — e.g. 15000000"
+            style={globalStyles.input}
+            placeholder={basePrice ? `Default: ₹${basePrice.toLocaleString('en-IN')}` : 'e.g. 15000000'}
             keyboardType="numeric"
             value={form.auctionPrice}
             onChangeText={v => set('auctionPrice', v)}
           />
-          {!form.auctionPrice && (
-            <Text style={{ color: colors.error, fontSize: 12, marginBottom: 8 }}>⚠ Auction Price is required</Text>
-          )}
 
           <TouchableOpacity
-            style={[globalStyles.button, { marginTop: 10 }]}
+            style={[globalStyles.button, { marginTop: 6, opacity: (form.name && selectedRole) ? 1 : 0.5 }]}
             onPress={handleAdd}
-            disabled={loading}
+            disabled={loading || !form.name || !selectedRole}
           >
-            <Text style={globalStyles.buttonText}>{loading ? 'Saving...' : 'Save Player'}</Text>
+            {loading
+              ? <ActivityIndicator color={colors.white} />
+              : <Text style={globalStyles.buttonText}>Save Player</Text>}
           </TouchableOpacity>
         </View>
       </ScrollView>
