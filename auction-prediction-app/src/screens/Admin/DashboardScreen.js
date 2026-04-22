@@ -1,5 +1,6 @@
+import AppleSpinner from '../../components/AppleSpinner';
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
@@ -46,20 +47,20 @@ export default function DashboardScreen({ navigation }) {
     } catch (err) {
       console.log('Dashboard fetch error:', err.message);
     } finally {
-      setLoading(false);
+      setTimeout(() => setLoading(false), 1000);
     }
   };
 
   const formatCurrency = (amount) => '₹' + amount.toLocaleString('en-IN');
 
   return (
-    <SafeAreaView style={globalStyles.container}>
-      <ScrollView contentContainerStyle={{ padding: 20 }}>
+    <SafeAreaView style={globalStyles.container} edges={['right', 'bottom', 'left']}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 20 }}>
         <Text style={[globalStyles.title, { marginBottom: 5 }]}>Admin Dashboard</Text>
         <Text style={{ color: colors.textLight, marginBottom: 25 }}>Real-time statistics</Text>
 
         {loading ? (
-          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 60 }} />
+          <AppleSpinner size="large" color={colors.primary} style={{ marginTop: 60 }} />
         ) : (
           <>
             {/* Stats Row */}

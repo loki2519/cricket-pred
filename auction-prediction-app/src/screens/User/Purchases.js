@@ -1,8 +1,6 @@
+import AppleSpinner from '../../components/AppleSpinner';
 import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View, Text, FlatList,
-  ActivityIndicator, ScrollView, TouchableOpacity, Alert,
-} from 'react-native';
+import { View, Text, FlatList, ScrollView, TouchableOpacity, Alert, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
@@ -56,7 +54,7 @@ export default function Purchases({ teamId }) {
     } catch (err) {
       console.log('Error fetching purchases:', err.message);
     } finally {
-      setLoading(false);
+      setTimeout(() => setLoading(false), 1000);
     }
   };
 
@@ -75,7 +73,7 @@ export default function Purchases({ teamId }) {
           onPress: async () => {
             setLoading(true);
             const { error } = await supabase.from('purchases').delete().eq('id', item.id);
-            if (error) { setLoading(false); Alert.alert('Error', error.message); }
+            if (error) { setTimeout(() => setLoading(false), 1000); Alert.alert('Error', error.message); }
             else { Alert.alert('Released', `${p.name || 'Player'} removed.`); fetchPurchases(); }
           },
         },
@@ -115,19 +113,19 @@ export default function Purchases({ teamId }) {
   };
 
   return (
-    <SafeAreaView style={globalStyles.container}>
-      <View style={{ padding: 15, flex: 1 }}>
+    <SafeAreaView style={globalStyles.container} edges={['right', 'bottom', 'left']}>
+      <View style={{ paddingHorizontal: 15, paddingTop: 4, paddingBottom: 15, flex: 1 }}>
         <Text style={[globalStyles.title, { marginBottom: 5 }]}>Purchase History</Text>
         <Text style={{ color: colors.textLight, marginBottom: 15 }}>
           {purchases.length} player{purchases.length !== 1 ? 's' : ''} bought
         </Text>
 
         {loading ? (
-          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />
+          <AppleSpinner size="large" color={colors.primary} style={{ marginTop: 50 }} />
         ) : (
           <View style={[globalStyles.card, { flex: 1, padding: 10, elevation: 3 }]}>
-            <ScrollView horizontal showsHorizontalScrollIndicator>
-              <View style={{ minWidth: 680 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+              <View style={{ minWidth: 680, flex: 1 }}>
                 {/* Header */}
                 <View style={{
                   flexDirection: 'row', borderBottomWidth: 2,
@@ -144,10 +142,11 @@ export default function Purchases({ teamId }) {
                 </View>
 
                 <FlatList
+                  style={{ flex: 1 }}
                   data={purchases}
-                  keyExtractor={(item) => item.id}
+                  keyExtractor={(item) => item.id.toString()}
                   renderItem={renderItem}
-                  showsVerticalScrollIndicator={false}
+                  showsVerticalScrollIndicator={true}
                   ListEmptyComponent={
                     <View style={{ alignItems: 'center', marginTop: 60, width: 660 }}>
                       <MaterialCommunityIcons name="cart-off" size={64} color={colors.border} />

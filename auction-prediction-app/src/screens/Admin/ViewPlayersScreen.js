@@ -1,7 +1,6 @@
+import AppleSpinner from '../../components/AppleSpinner';
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, FlatList, TouchableOpacity, Alert, ScrollView, ActivityIndicator,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, ScrollView, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { globalStyles, colors } from '../../styles/theme';
@@ -44,7 +43,7 @@ export default function ViewPlayersScreen({ navigation }) {
       .order('name', { ascending: true });
     if (error) Alert.alert('Error', error.message);
     else setPlayers(data || []);
-    setLoading(false);
+    setTimeout(() => setLoading(false), 1000);
   };
 
   const handleDelete = async (id, name) => {
@@ -53,6 +52,7 @@ export default function ViewPlayersScreen({ navigation }) {
       {
         text: 'Delete', style: 'destructive',
         onPress: async () => {
+          await supabase.from('purchases').delete().eq('player_id', id);
           const { error } = await supabase.from('players').delete().eq('id', id);
           if (!error) fetchPlayers();
           else Alert.alert('Error', error.message);
@@ -135,8 +135,8 @@ export default function ViewPlayersScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={globalStyles.container}>
-      <View style={{ paddingHorizontal: 16, paddingTop: 16, flex: 1 }}>
+    <SafeAreaView style={globalStyles.container} edges={['right', 'bottom', 'left']}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 4, flex: 1 }}>
         {/* Header */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <Text style={globalStyles.title}>All Players</Text>
@@ -149,11 +149,11 @@ export default function ViewPlayersScreen({ navigation }) {
         </View>
 
         {loading ? (
-          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 60 }} />
+          <AppleSpinner size="large" color={colors.primary} style={{ marginTop: 60 }} />
         ) : (
           <View style={[globalStyles.card, { flex: 1, padding: 0, overflow: 'hidden' }]}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={{ minWidth: MIN_WIDTH }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+              <View style={{ minWidth: MIN_WIDTH, flex: 1 }}>
 
                 {/* Table header */}
                 <View style={{
@@ -175,11 +175,11 @@ export default function ViewPlayersScreen({ navigation }) {
 
                 {/* Rows */}
                 <FlatList
+                  style={{ flex: 1 }}
                   data={players}
                   keyExtractor={item => item.id.toString()}
                   renderItem={renderRow}
-                  showsVerticalScrollIndicator={false}
-                  scrollEnabled={false}
+                  showsVerticalScrollIndicator={true}
                   ListEmptyComponent={
                     <View style={{ alignItems: 'center', paddingVertical: 50, width: MIN_WIDTH }}>
                       <MaterialCommunityIcons name="account-off" size={48} color={colors.border} />

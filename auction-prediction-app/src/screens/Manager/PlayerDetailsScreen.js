@@ -1,5 +1,6 @@
+import AppleSpinner from '../../components/AppleSpinner';
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { globalStyles, colors } from '../../styles/theme';
@@ -34,7 +35,7 @@ export default function PlayerDetailsScreen({ route, navigation }) {
 
     if (remaining < price) {
       Alert.alert('Insufficient Budget', 'Check your current bidding balance amount');
-      setLoading(false);
+      setTimeout(() => setLoading(false), 1000);
       return;
     }
 
@@ -47,18 +48,18 @@ export default function PlayerDetailsScreen({ route, navigation }) {
 
     if(error){
       Alert.alert('Error', error.message);
-      setLoading(false);
+      setTimeout(() => setLoading(false), 1000);
       return;
     }
 
     
-    setLoading(false);
+    setTimeout(() => setLoading(false), 1000);
     Alert.alert('Success', `Bought ${player.name} for $${price}`);
     navigation.goBack();
   };
 
   return (
-    <SafeAreaView style={globalStyles.container}>
+    <SafeAreaView style={globalStyles.container} edges={['right', 'bottom', 'left']}>
       <View style={{ padding: 20 }}>
         <Text style={globalStyles.title}>{player.name}</Text>
         <View style={globalStyles.card}>
@@ -70,7 +71,7 @@ export default function PlayerDetailsScreen({ route, navigation }) {
           <Text style={{ fontSize: 16, marginBottom: 15 }}>Category: {player.category}</Text>
           
           <TouchableOpacity style={globalStyles.button} onPress={buyPlayer} disabled={loading}>
-            {loading ? <ActivityIndicator color="white" /> : <Text style={globalStyles.buttonText}>Buy Player (Predicted Price)</Text>}
+            {loading ? <AppleSpinner color="white" /> : <Text style={globalStyles.buttonText}>Buy Player (Predicted Price)</Text>}
           </TouchableOpacity>
         </View>
       </View>

@@ -1,5 +1,6 @@
+import AppleSpinner from '../../components/AppleSpinner';
 import React, { useState, useCallback } from 'react';
-import { View, Text, ActivityIndicator, FlatList } from 'react-native';
+import { View, Text, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
@@ -57,7 +58,7 @@ export default function Budget({ teamId }) {
     } catch (err) {
       console.log('Error fetching budget:', err.message);
     } finally {
-      setLoading(false);
+      setTimeout(() => setLoading(false), 1000);
     }
   };
 
@@ -91,8 +92,8 @@ export default function Budget({ teamId }) {
   };
 
   return (
-    <SafeAreaView style={globalStyles.container}>
-      <View style={{ padding: 20, flex: 1 }}>
+    <SafeAreaView style={globalStyles.container} edges={['right', 'bottom', 'left']}>
+      <View style={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 20, flex: 1 }}>
         <Text style={[globalStyles.title, { marginBottom: 4 }]}>Team Budget</Text>
         {budgetData.teamName ? (
           <Text style={{ color: colors.textLight, fontSize: 13, marginBottom: 20 }}>
@@ -101,7 +102,7 @@ export default function Budget({ teamId }) {
         ) : null}
 
         {loading ? (
-          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />
+          <AppleSpinner size="large" color={colors.primary} style={{ marginTop: 50 }} />
         ) : (
           <View style={{ flex: 1 }}>
             {/* Total budget card */}

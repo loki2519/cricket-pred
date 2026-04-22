@@ -1,8 +1,6 @@
+import AppleSpinner from '../../components/AppleSpinner';
 import React, { useState, useCallback } from 'react';
-import {
-  View, Text, TouchableOpacity,
-  ActivityIndicator, ScrollView, FlatList, Modal,
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, FlatList, Modal, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
@@ -86,7 +84,7 @@ export default function Dashboard({ navigation, teamId, teamName }) {
     } catch (err) {
       console.log('Dashboard error:', err.message);
     } finally {
-      setLoading(false);
+      setTimeout(() => setLoading(false), 1000);
     }
   };
 
@@ -117,13 +115,13 @@ export default function Dashboard({ navigation, teamId, teamName }) {
   const roleKeys = ['Batsman', 'Bowler', 'All-Rounder', 'Wicketkeeper Batsman'];
 
   return (
-    <SafeAreaView style={globalStyles.container}>
-      <ScrollView contentContainerStyle={{ padding: 20 }}>
+    <SafeAreaView style={globalStyles.container} edges={['right', 'bottom', 'left']}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 20 }}>
         <Text style={[globalStyles.title, { marginBottom: 5 }]}>Overview</Text>
         {teamName ? <Text style={{ color: colors.textLight, marginBottom: 16 }}>{teamName}</Text> : null}
 
         {loading ? (
-          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />
+          <AppleSpinner size="large" color={colors.primary} style={{ marginTop: 50 }} />
         ) : (
           <View>
             {/* Top stats */}
@@ -225,7 +223,7 @@ export default function Dashboard({ navigation, teamId, teamName }) {
                 <MaterialCommunityIcons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
-            {modalLoading ? <ActivityIndicator color={colors.primary} /> : (
+            {modalLoading ? <AppleSpinner color={colors.primary} /> : (
               <FlatList
                 data={allPlayers}
                 keyExtractor={(item, index) => index.toString()}

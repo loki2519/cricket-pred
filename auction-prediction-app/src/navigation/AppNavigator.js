@@ -1,8 +1,28 @@
+import AppleSpinner from '../components/AppleSpinner';
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { supabase } from '../lib/supabase';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
+import { Audio } from 'expo-av';
+
+async function triggerSyncSound() {
+  try {
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      staysActiveInBackground: false,
+      playsInSilentModeIOS: true,
+      shouldDuckAndroid: true,
+      playThroughEarpieceAndroid: false
+    });
+    const { sound } = await Audio.Sound.createAsync(
+      require('../../assets/sounds/success.mp3')
+    );
+    await sound.playAsync();
+  } catch (e) {
+    console.log('Global sound error:', e.message);
+  }
+}
 
 import SplashScreen from '../screens/SplashScreen';
 import LoginScreen from '../screens/Auth/LoginScreen';
@@ -16,38 +36,82 @@ const Stack = createStackNavigator();
 
 export default function AppNavigator() {
   const [showSplash, setShowSplash] = useState(true);
-  const [session, setSession]       = useState(null);
-  const [role, setRole]             = useState(null);
-  const [teamInfo, setTeamInfo]     = useState(null);
-  const [loading, setLoading]       = useState(true);
+  const [session, setSession] = useState(null);
+  const [role, setRole] = useState(null);
+  const [teamInfo, setTeamInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Force-remount dependency to clear out any stale Expo Fast Refresh listeners in memory
+  const listenerVersion = "v2";
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) handleSession(session);
-      else setLoading(false);
+      if (session) handleSession(session, 'INITIAL_SESSION');
+      else setTimeout(() => setLoading(false), 1000);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) handleSession(session);
-      else {
-        setRole(null);
-        setTeamInfo(null);
-        setLoading(false);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Defer setting session on SIGNED_IN so LoginScreen stays alive while we process sound/roles
+      if (event === 'SIGNED_IN') {
+        handleSession(session, event);
+      } else {
+        setSession(session);
+        if (session) handleSession(session, event);
+        else {
+          setRole(null);
+          setTeamInfo(null);
+          setTimeout(() => setLoading(false), 1000);
+        }
       }
     });
 
     return () => subscription?.unsubscribe();
-  }, []);
+  }, [listenerVersion]);
 
-  const handleSession = async (session) => {
+  const handleSession = async (session, event) => {
     const email = session.user.email;
-    if (email === 'maddilokeshreddy19@gmail.com') {
+
+    // Check if we need to show the full screen loader
+    // We only need to show it on initial load or fresh login to prevent unmounting active forms.
+    // (Removed 'role === null' because the useEffect closure captures the initial stale null state).
+    // Only show global loading screen block on initial cold start
+    const isNewLogin = event === 'INITIAL_SESSION' || event === 'SIGNED_IN';
+    if (event === 'INITIAL_SESSION') {
+      setLoading(true);
+    }
+
+    // Hardcoded admin email — primary source of truth
+    const HARDCODED_ADMINS = ['karthuhemachandrika1@gmail.com'];
+    let adminEmails = [...HARDCODED_ADMINS];
+
+    try {
+      const { data } = await supabase.from('admin_config').select('admin_email').eq('id', 1).single();
+      if (data && data.admin_email && !adminEmails.includes(data.admin_email)) {
+        adminEmails.push(data.admin_email);
+      }
+    } catch (err) {
+      console.log('Could not fetch dynamic admin config, using hardcoded list');
+    }
+
+    if (adminEmails.includes(email)) {
+      if (isNewLogin) await triggerSyncSound();
+
+      // If logging in actively, keep LoginScreen spinner alive while sound plays
+      if (event === 'SIGNED_IN') {
+        await new Promise(r => setTimeout(r, 1300));
+        setSession(session);
+      }
+
       setRole('admin');
-      setLoading(false);
+
+      // If cold booting the app, drop the global loader now
+      if (event === 'INITIAL_SESSION') {
+        setTimeout(() => setLoading(false), 1300);
+      }
       return;
     }
+
     setRole('manager');
     try {
       const { data } = await supabase
@@ -63,7 +127,18 @@ export default function AppNavigator() {
     } catch {
       setTeamInfo(null);
     } finally {
-      setLoading(false);
+      if (isNewLogin) await triggerSyncSound();
+
+      if (event === 'SIGNED_IN') {
+        await new Promise(r => setTimeout(r, 1300));
+        setSession(session);
+      }
+
+      setRole('manager');
+
+      if (event === 'INITIAL_SESSION') {
+        setTimeout(() => setLoading(false), 1300);
+      }
     }
   };
 
@@ -74,7 +149,7 @@ export default function AppNavigator() {
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
+        <AppleSpinner size="large" />
       </View>
     );
   }
@@ -84,8 +159,8 @@ export default function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!session ? (
           <>
-            <Stack.Screen name="Login"          component={LoginScreen} />
-            <Stack.Screen name="Register"       component={RegisterScreen} />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           </>
         ) : role === 'admin' ? (
@@ -97,7 +172,7 @@ export default function AppNavigator() {
         ) : (
           <>
             <Stack.Screen name="SelectTeam" component={SelectTeamScreen} />
-            <Stack.Screen name="MainDrawer"  component={UserDrawer} />
+            <Stack.Screen name="MainDrawer" component={UserDrawer} />
           </>
         )}
       </Stack.Navigator>

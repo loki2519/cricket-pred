@@ -1,8 +1,7 @@
+import AppleSpinner from '../../components/AppleSpinner';
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity,
-  Alert, ScrollView, Modal, ActivityIndicator, Image,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity,
+  Alert, ScrollView, Modal, Image, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { globalStyles, colors } from '../../styles/theme';
@@ -36,7 +35,7 @@ export default function ManageTeamsScreen() {
       name:   name.trim(),
       budget: parseInt(budget) || 100000000,
     }]);
-    setLoading(false);
+    setTimeout(() => setLoading(false), 1000);
     if (error) Alert.alert('Error', error.message);
     else {
       Alert.alert('Success', `Team "${name}" added!`);
@@ -58,7 +57,7 @@ export default function ManageTeamsScreen() {
     const { error } = await supabase.from('teams')
       .update({ name: editName.trim(), budget: parseInt(editBudget) || 100000000 })
       .eq('id', editTeam.id);
-    setLoading(false);
+    setTimeout(() => setLoading(false), 1000);
     if (error) Alert.alert('Error', error.message);
     else { setEditModal(false); fetchTeams(); }
   };
@@ -84,7 +83,7 @@ export default function ManageTeamsScreen() {
             } catch (err) {
               Alert.alert('Error', err.message);
             } finally {
-              setLoading(false);
+              setTimeout(() => setLoading(false), 1000);
             }
           },
         },
@@ -95,8 +94,8 @@ export default function ManageTeamsScreen() {
   const formatCurrency = (v) => '₹' + (v || 0).toLocaleString('en-IN');
 
   return (
-    <SafeAreaView style={globalStyles.container}>
-      <ScrollView contentContainerStyle={{ padding: 20 }}>
+    <SafeAreaView style={globalStyles.container} edges={['right', 'bottom', 'left']}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 20 }}>
         <Text style={[globalStyles.title, { marginBottom: 20 }]}>Manage Teams</Text>
 
         {/* Add Team */}
@@ -105,11 +104,11 @@ export default function ManageTeamsScreen() {
             Add New Team
           </Text>
           <Text style={{ color: colors.text, marginBottom: 4 }}>Team Name *</Text>
-          <TextInput style={globalStyles.input} placeholder="e.g. Mumbai Indians" value={name} onChangeText={setName} />
+          <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} placeholder="e.g. Mumbai Indians" value={name} onChangeText={setName} />
           <Text style={{ color: colors.text, marginBottom: 4 }}>Budget (₹)</Text>
-          <TextInput style={globalStyles.input} placeholder="Default: ₹10,00,00,000" keyboardType="numeric" value={budget} onChangeText={setBudget} />
+          <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} placeholder="Default: ₹10,00,00,000" keyboardType="numeric" value={budget} onChangeText={setBudget} />
           <TouchableOpacity style={globalStyles.button} onPress={addTeam} disabled={loading}>
-            {loading ? <ActivityIndicator color={colors.white} /> : <Text style={globalStyles.buttonText}>Add Team</Text>}
+            {loading ? <AppleSpinner color={colors.white} /> : <Text style={globalStyles.buttonText}>Add Team</Text>}
           </TouchableOpacity>
         </View>
 
@@ -172,11 +171,11 @@ export default function ManageTeamsScreen() {
           <View style={{ backgroundColor: colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24 }}>
             <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.primary, marginBottom: 16 }}>Edit Team</Text>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Team Name</Text>
-            <TextInput style={globalStyles.input} value={editName} onChangeText={setEditName} />
+            <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} value={editName} onChangeText={setEditName} />
             <Text style={{ color: colors.text, marginBottom: 4 }}>Budget (₹)</Text>
-            <TextInput style={globalStyles.input} keyboardType="numeric" value={editBudget} onChangeText={setEditBudget} />
+            <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} keyboardType="numeric" value={editBudget} onChangeText={setEditBudget} />
             <TouchableOpacity style={globalStyles.button} onPress={handleEdit} disabled={loading}>
-              {loading ? <ActivityIndicator color={colors.white} /> : <Text style={globalStyles.buttonText}>Save Changes</Text>}
+              {loading ? <AppleSpinner color={colors.white} /> : <Text style={globalStyles.buttonText}>Save Changes</Text>}
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setEditModal(false)} style={{ marginTop: 12, alignItems: 'center' }}>
               <Text style={{ color: colors.textLight }}>Cancel</Text>

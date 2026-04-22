@@ -17,8 +17,8 @@ export default function ManagerDashboardScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={globalStyles.container}>
-      <View style={{ padding: 20, flex: 1 }}>
+    <SafeAreaView style={globalStyles.container} edges={['right', 'bottom', 'left']}>
+      <View style={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 20, flex: 1 }}>
         <Text style={globalStyles.title}>Available Players</Text>
         <FlatList
           data={players}

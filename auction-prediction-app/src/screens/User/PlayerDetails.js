@@ -1,8 +1,7 @@
+import AppleSpinner from '../../components/AppleSpinner';
 import React, { useState } from 'react';
-import {
-  View, Text, TouchableOpacity,
-  Alert, ActivityIndicator, ScrollView,
-} from 'react-native';
+import { View, Text, TouchableOpacity,
+  Alert, ScrollView, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { colors, globalStyles } from '../../styles/theme';
@@ -93,7 +92,7 @@ export default function PlayerDetails({ route, navigation }) {
     } catch (err) {
       Alert.alert('Error', err.message);
     } finally {
-      setLoading(false);
+      setTimeout(() => setLoading(false), 1000);
     }
   };
 
@@ -103,8 +102,8 @@ export default function PlayerDetails({ route, navigation }) {
   const isBatsman  = player.role !== 'Bowler';
 
   return (
-    <SafeAreaView style={globalStyles.container}>
-      <ScrollView contentContainerStyle={{ padding: 20 }}>
+    <SafeAreaView style={globalStyles.container} edges={['right', 'bottom', 'left']}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 20 }}>
         {/* Back button */}
         <TouchableOpacity
           style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}
@@ -207,7 +206,7 @@ export default function PlayerDetails({ route, navigation }) {
           disabled={loading}
         >
           {loading
-            ? <ActivityIndicator color={colors.white} />
+            ? <AppleSpinner color={colors.white} />
             : <>
                 <MaterialCommunityIcons name="cart-plus" size={20} color={colors.white} style={{ marginRight: 8 }} />
                 <Text style={globalStyles.buttonText}>Buy Player</Text>

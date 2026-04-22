@@ -1,8 +1,7 @@
+import AppleSpinner from '../../components/AppleSpinner';
 import React, { useState } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity,
-  Alert, ScrollView, ActivityIndicator,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity,
+  Alert, ScrollView, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { colors, globalStyles } from '../../styles/theme';
@@ -82,7 +81,7 @@ export default function AddPlayerScreen({ navigation }) {
     if (showCatches) payload.catches = parseInt(form.catches) || 0;
 
     const { error } = await supabase.from('players').insert([payload]);
-    setLoading(false);
+    setTimeout(() => setLoading(false), 1000);
 
     if (error) {
       Alert.alert('Error', error.message);
@@ -98,15 +97,14 @@ export default function AddPlayerScreen({ navigation }) {
   const roleRows = [ROLES.slice(0, 2), ROLES.slice(2)];
 
   return (
-    <SafeAreaView style={globalStyles.container}>
-      <ScrollView contentContainerStyle={{ padding: 20 }}>
+    <SafeAreaView style={globalStyles.container} edges={['right', 'bottom', 'left']}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 20 }}>
         <Text style={[globalStyles.title, { marginBottom: 20 }]}>Add Player</Text>
         <View style={globalStyles.card}>
 
           {/* Player Name */}
           <Text style={{ color: colors.text, marginBottom: 4 }}>Player Name *</Text>
-          <TextInput
-            style={globalStyles.input}
+          <TextInput placeholderTextColor="#FFB380" style={globalStyles.input}
             placeholder="e.g. Virat Kohli"
             value={form.name}
             onChangeText={v => set('name', v)}
@@ -139,42 +137,42 @@ export default function AddPlayerScreen({ navigation }) {
 
           {/* Matches */}
           <Text style={{ color: colors.text, marginBottom: 4, marginTop: 4 }}>Matches</Text>
-          <TextInput style={globalStyles.input} placeholder="e.g. 150" keyboardType="numeric"
+          <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} placeholder="e.g. 150" keyboardType="numeric"
             value={form.matches} onChangeText={v => set('matches', v)} />
 
           {showRuns && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Runs</Text>
-            <TextInput style={globalStyles.input} placeholder="e.g. 5000" keyboardType="numeric"
+            <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} placeholder="e.g. 5000" keyboardType="numeric"
               value={form.runs} onChangeText={v => set('runs', v)} />
           </>}
 
           {showStrikeRate && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Strike Rate</Text>
-            <TextInput style={globalStyles.input} placeholder="e.g. 140.5" keyboardType="numeric"
+            <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} placeholder="e.g. 140.5" keyboardType="numeric"
               value={form.strikeRate} onChangeText={v => set('strikeRate', v)} />
           </>}
 
           {showWickets && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Wickets</Text>
-            <TextInput style={globalStyles.input} placeholder="e.g. 80" keyboardType="numeric"
+            <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} placeholder="e.g. 80" keyboardType="numeric"
               value={form.wickets} onChangeText={v => set('wickets', v)} />
           </>}
 
           {showEconomy && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Economy Rate</Text>
-            <TextInput style={globalStyles.input} placeholder="e.g. 7.5" keyboardType="numeric"
+            <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} placeholder="e.g. 7.5" keyboardType="numeric"
               value={form.economy} onChangeText={v => set('economy', v)} />
           </>}
 
           {showStumps && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Stumpings 🧤</Text>
-            <TextInput style={globalStyles.input} placeholder="e.g. 45" keyboardType="numeric"
+            <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} placeholder="e.g. 45" keyboardType="numeric"
               value={form.stumps} onChangeText={v => set('stumps', v)} />
           </>}
 
           {showCatches && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Catches 🧤</Text>
-            <TextInput style={globalStyles.input} placeholder="e.g. 90" keyboardType="numeric"
+            <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} placeholder="e.g. 90" keyboardType="numeric"
               value={form.catches} onChangeText={v => set('catches', v)} />
           </>}
 
@@ -240,8 +238,7 @@ export default function AddPlayerScreen({ navigation }) {
           <Text style={{ color: colors.text, marginBottom: 4 }}>
             Auction Price (₹) <Text style={{ color: colors.textLight, fontSize: 11 }}>(leave blank to use base price)</Text>
           </Text>
-          <TextInput
-            style={globalStyles.input}
+          <TextInput placeholderTextColor="#FFB380" style={globalStyles.input}
             placeholder={basePrice ? `Default: ₹${basePrice.toLocaleString('en-IN')}` : 'e.g. 15000000'}
             keyboardType="numeric"
             value={form.auctionPrice}
@@ -254,7 +251,7 @@ export default function AddPlayerScreen({ navigation }) {
             disabled={loading || !form.name || !selectedRole}
           >
             {loading
-              ? <ActivityIndicator color={colors.white} />
+              ? <AppleSpinner color={colors.white} />
               : <Text style={globalStyles.buttonText}>Save Player</Text>}
           </TouchableOpacity>
         </View>

@@ -7,6 +7,7 @@ import AddPlayerScreen from '../screens/Admin/AddPlayerScreen';
 import ViewPlayersScreen from '../screens/Admin/ViewPlayersScreen';
 import ManageTeamsScreen from '../screens/Admin/ManageTeamsScreen';
 import PredictPriceScreen from '../screens/Admin/PredictPriceScreen';
+import AdminProfileScreen from '../screens/Admin/AdminProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { colors } from '../styles/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -64,6 +65,8 @@ export default function AdminDrawer() {
     >
       <Drawer.Screen name="Dashboard" component={DashboardScreen}
         options={{ drawerIcon: ({ color }) => <MaterialCommunityIcons name="view-dashboard" color={color} size={24} /> }} />
+      <Drawer.Screen name="Profile" component={AdminProfileScreen}
+        options={{ drawerIcon: ({ color }) => <MaterialCommunityIcons name="account-circle" color={color} size={24} /> }} />
       <Drawer.Screen name="Add Player" component={AddPlayerScreen}
         options={{ drawerIcon: ({ color }) => <MaterialCommunityIcons name="account-plus" color={color} size={24} /> }} />
       <Drawer.Screen name="View Players" component={ViewPlayersScreen}

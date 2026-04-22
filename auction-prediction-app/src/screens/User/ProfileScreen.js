@@ -1,8 +1,7 @@
+import AppleSpinner from '../../components/AppleSpinner';
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, TouchableOpacity,
-  Alert, Image, ScrollView, ActivityIndicator,
-} from 'react-native';
+import { View, Text, TouchableOpacity,
+  Alert, Image, ScrollView, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../lib/supabase';
@@ -70,7 +69,7 @@ export default function ProfileScreen({ teamName, teamId }) {
   };
 
   return (
-    <SafeAreaView style={globalStyles.container}>
+    <SafeAreaView style={globalStyles.container} edges={['right', 'bottom', 'left']}>
       <ScrollView contentContainerStyle={{ padding: 24 }}>
         <Text style={[globalStyles.title, { marginBottom: 24 }]}>My Profile</Text>
 
@@ -97,7 +96,7 @@ export default function ProfileScreen({ teamName, teamId }) {
               backgroundColor: colors.primary, borderRadius: 14, padding: 4,
             }}>
               {uploading
-                ? <ActivityIndicator size="small" color={colors.white} />
+                ? <AppleSpinner size="small" color={colors.white} />
                 : <MaterialCommunityIcons name="camera" size={16} color={colors.white} />}
             </View>
           </TouchableOpacity>

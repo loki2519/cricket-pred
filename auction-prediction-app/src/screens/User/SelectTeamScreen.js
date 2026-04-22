@@ -1,5 +1,6 @@
+import AppleSpinner from '../../components/AppleSpinner';
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { colors, globalStyles } from '../../styles/theme';
@@ -33,7 +34,7 @@ export default function SelectTeamScreen({ navigation }) {
     } catch (err) {
       console.log('Error fetching teams:', err.message);
     } finally {
-      setLoading(false);
+      setTimeout(() => setLoading(false), 1000);
     }
   };
 
@@ -82,7 +83,7 @@ export default function SelectTeamScreen({ navigation }) {
           <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.primary, marginBottom: 16 }}>Available Teams</Text>
 
           {loading ? (
-            <ActivityIndicator size="large" color={colors.primary} style={{ marginVertical: 30 }} />
+            <AppleSpinner size="large" color={colors.primary} style={{ marginVertical: 30 }} />
           ) : teams.length === 0 ? (
             <Text style={{ textAlign: 'center', color: colors.textLight, marginVertical: 30 }}>
               No teams available. Ask your admin to create teams first.
@@ -130,7 +131,7 @@ export default function SelectTeamScreen({ navigation }) {
             onPress={handleConfirm}
             disabled={!selectedTeam || saving}
           >
-            {saving ? <ActivityIndicator color={colors.white} /> : <Text style={globalStyles.buttonText}>Confirm Team</Text>}
+            {saving ? <AppleSpinner color={colors.white} /> : <Text style={globalStyles.buttonText}>Confirm Team</Text>}
           </TouchableOpacity>
 
           <TouchableOpacity

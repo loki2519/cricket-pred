@@ -47,8 +47,8 @@ export default function PredictPriceScreen() {
   const roleRows = [ROLES.slice(0, 2), ROLES.slice(2)];
 
   return (
-    <SafeAreaView style={globalStyles.container}>
-      <ScrollView contentContainerStyle={{ padding: 20 }}>
+    <SafeAreaView style={globalStyles.container} edges={['right', 'bottom', 'left']}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 20 }}>
         <Text style={[globalStyles.title, { marginBottom: 5 }]}>Predict Player Price</Text>
         <Text style={{ color: colors.textLight, marginBottom: 20 }}>
           Enter stats — category auto-classified by formula
@@ -82,42 +82,42 @@ export default function PredictPriceScreen() {
 
           {/* Matches (always shown) */}
           <Text style={{ color: colors.text, marginBottom: 4, marginTop: 4 }}>Matches Played *</Text>
-          <TextInput style={globalStyles.input} placeholder="e.g. 120" keyboardType="numeric"
+          <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} placeholder="e.g. 120" keyboardType="numeric"
             value={inputs.matches} onChangeText={v => set('matches', v)} />
 
           {showRuns && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Total Runs</Text>
-            <TextInput style={globalStyles.input} placeholder="e.g. 3500" keyboardType="numeric"
+            <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} placeholder="e.g. 3500" keyboardType="numeric"
               value={inputs.runs} onChangeText={v => set('runs', v)} />
           </>}
 
           {showStrikeRate && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Strike Rate</Text>
-            <TextInput style={globalStyles.input} placeholder="e.g. 140.5" keyboardType="numeric"
+            <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} placeholder="e.g. 140.5" keyboardType="numeric"
               value={inputs.strikeRate} onChangeText={v => set('strikeRate', v)} />
           </>}
 
           {showWickets && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Wickets</Text>
-            <TextInput style={globalStyles.input} placeholder="e.g. 80" keyboardType="numeric"
+            <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} placeholder="e.g. 80" keyboardType="numeric"
               value={inputs.wickets} onChangeText={v => set('wickets', v)} />
           </>}
 
           {showEconomy && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Economy Rate</Text>
-            <TextInput style={globalStyles.input} placeholder="e.g. 7.5" keyboardType="numeric"
+            <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} placeholder="e.g. 7.5" keyboardType="numeric"
               value={inputs.economy} onChangeText={v => set('economy', v)} />
           </>}
 
           {showStumps && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Stumpings 🧤</Text>
-            <TextInput style={globalStyles.input} placeholder="e.g. 45" keyboardType="numeric"
+            <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} placeholder="e.g. 45" keyboardType="numeric"
               value={inputs.stumps} onChangeText={v => set('stumps', v)} />
           </>}
 
           {showCatches && <>
             <Text style={{ color: colors.text, marginBottom: 4 }}>Catches 🧤</Text>
-            <TextInput style={globalStyles.input} placeholder="e.g. 90" keyboardType="numeric"
+            <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} placeholder="e.g. 90" keyboardType="numeric"
               value={inputs.catches} onChangeText={v => set('catches', v)} />
           </>}
 

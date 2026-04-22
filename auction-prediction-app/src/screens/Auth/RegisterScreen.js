@@ -1,7 +1,6 @@
+import AppleSpinner from '../../components/AppleSpinner';
 import React, { useState } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { colors, globalStyles } from '../../styles/theme';
@@ -51,7 +50,7 @@ export default function RegisterScreen({ navigation }) {
 
     setLoading(true);
     const { error } = await supabase.auth.signUp({ email, password });
-    setLoading(false);
+    setTimeout(() => setLoading(false), 1000);
 
     if (error) {
       Alert.alert('Registration Error', error.message);
@@ -65,7 +64,7 @@ export default function RegisterScreen({ navigation }) {
     if (!otp) return Alert.alert('Error', 'Please enter the OTP sent to your email.');
     setLoading(true);
     const { error } = await supabase.auth.verifyOtp({ email, token: otp, type: 'signup' });
-    setLoading(false);
+    setTimeout(() => setLoading(false), 1000);
 
     if (error) {
       Alert.alert('Error', 'OTP is incorrect or has expired. Please try again.');
@@ -75,7 +74,7 @@ export default function RegisterScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={globalStyles.container}>
+    <SafeAreaView style={globalStyles.container} edges={['right', 'bottom', 'left']}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 30 }}>
         <Text style={{ fontSize: 32, fontWeight: 'bold', color: colors.primary, textAlign: 'center', marginBottom: 10 }}>
           Sign Up
@@ -90,8 +89,7 @@ export default function RegisterScreen({ navigation }) {
             <Text style={{ color: colors.text, marginBottom: 5 }}>Email Address</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: 8, backgroundColor: colors.white, marginBottom: 16 }}>
               <MaterialCommunityIcons name="email" size={24} color={colors.primary} style={{ paddingLeft: 10 }} />
-              <TextInput
-                style={{ flex: 1, padding: 12, fontSize: 16, color: colors.text }}
+              <TextInput placeholderTextColor="#FFB380" style={{ flex: 1, padding: 12, fontSize: 16, color: colors.text }}
                 placeholder="example@gmail.com"
                 value={email}
                 onChangeText={setEmail}
@@ -106,8 +104,7 @@ export default function RegisterScreen({ navigation }) {
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ paddingLeft: 10 }}>
                 <MaterialCommunityIcons name={showPassword ? 'eye' : 'eye-off'} size={24} color={colors.primary} />
               </TouchableOpacity>
-              <TextInput
-                style={{ flex: 1, padding: 12, fontSize: 16, color: colors.text }}
+              <TextInput placeholderTextColor="#FFB380" style={{ flex: 1, padding: 12, fontSize: 16, color: colors.text }}
                 placeholder="Create a strong password"
                 value={password}
                 onChangeText={setPassword}
@@ -160,7 +157,7 @@ export default function RegisterScreen({ navigation }) {
               disabled={loading}
             >
               {loading
-                ? <ActivityIndicator color={colors.white} />
+                ? <AppleSpinner color={colors.white} />
                 : <Text style={globalStyles.buttonText}>Register &amp; Send OTP</Text>}
             </TouchableOpacity>
 
@@ -179,8 +176,7 @@ export default function RegisterScreen({ navigation }) {
             </View>
 
             <Text style={{ color: colors.text, marginBottom: 5 }}>Enter 6-Digit OTP</Text>
-            <TextInput
-              style={[globalStyles.input, { textAlign: 'center', fontSize: 24, letterSpacing: 8 }]}
+            <TextInput placeholderTextColor="#FFB380" style={[globalStyles.input, { textAlign: 'center', fontSize: 24, letterSpacing: 8 }]}
               placeholder="······"
               value={otp}
               onChangeText={(text) => setOtp(text.replace(/[^0-9]/g, '').slice(0, 6))}
@@ -190,7 +186,7 @@ export default function RegisterScreen({ navigation }) {
 
             <TouchableOpacity style={globalStyles.button} onPress={handleVerifyOtp} disabled={loading}>
               {loading
-                ? <ActivityIndicator color={colors.white} />
+                ? <AppleSpinner color={colors.white} />
                 : <Text style={globalStyles.buttonText}>Verify OTP</Text>}
             </TouchableOpacity>
 

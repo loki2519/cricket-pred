@@ -1,5 +1,6 @@
+import AppleSpinner from '../components/AppleSpinner';
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Animated, StyleSheet, Easing, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, Animated, StyleSheet, Easing, TouchableOpacity } from 'react-native';
 import { colors } from '../styles/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -9,14 +10,20 @@ export default function SplashScreen({ onFinish }) {
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
-    // Just fade in the logo on mount
+    // Fade in the logo on mount
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 800,
       useNativeDriver: true,
     }).start();
-  }, []);
 
+    // Automatically start animation after 1 second (no manual tap needed)
+    const timer = setTimeout(() => {
+      handleIconPress();
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
   const handleIconPress = () => {
     if (isAnimating) return;
     setIsAnimating(true);
@@ -48,7 +55,7 @@ export default function SplashScreen({ onFinish }) {
         </TouchableOpacity>
         <Text style={styles.title}>AuctionOracle</Text>
         {isAnimating && (
-          <ActivityIndicator size="large" color="#FF6600" style={{ marginTop: 40 }} />
+          <AppleSpinner size="large" color="#FF6600" style={{ marginTop: 40 }} />
         )}
       </Animated.View>
     </View>

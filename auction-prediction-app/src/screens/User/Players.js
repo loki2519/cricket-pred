@@ -1,7 +1,6 @@
+import AppleSpinner from '../../components/AppleSpinner';
 import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View, Text, FlatList, TouchableOpacity, ActivityIndicator, ScrollView,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ScrollView, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
@@ -69,7 +68,7 @@ export default function Players({ navigation, teamId }) {
     } catch (err) {
       console.log('Players fetch error:', err.message);
     } finally {
-      setLoading(false);
+      setTimeout(() => setLoading(false), 1000);
     }
   };
 
@@ -155,8 +154,8 @@ export default function Players({ navigation, teamId }) {
   };
 
   return (
-    <SafeAreaView style={globalStyles.container}>
-      <View style={{ paddingHorizontal: 16, paddingTop: 16, flex: 1 }}>
+    <SafeAreaView style={globalStyles.container} edges={['right', 'bottom', 'left']}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 4, flex: 1 }}>
         {/* Header */}
         <Text style={[globalStyles.title, { marginBottom: 4 }]}>Available Players</Text>
         {remainingBudget !== null && (
@@ -171,11 +170,11 @@ export default function Players({ navigation, teamId }) {
         )}
 
         {loading ? (
-          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 60 }} />
+          <AppleSpinner size="large" color={colors.primary} style={{ marginTop: 60 }} />
         ) : (
           <View style={[globalStyles.card, { flex: 1, padding: 0, overflow: 'hidden' }]}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={{ minWidth: MIN_WIDTH }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+              <View style={{ minWidth: MIN_WIDTH, flex: 1 }}>
 
                 {/* Table header */}
                 <View style={{
@@ -197,11 +196,11 @@ export default function Players({ navigation, teamId }) {
 
                 {/* Rows */}
                 <FlatList
+                  style={{ flex: 1 }}
                   data={players}
                   keyExtractor={item => item.id.toString()}
                   renderItem={renderRow}
-                  showsVerticalScrollIndicator={false}
-                  scrollEnabled={false}
+                  showsVerticalScrollIndicator={true}
                   ListEmptyComponent={
                     <View style={{ alignItems: 'center', paddingVertical: 50, width: MIN_WIDTH }}>
                       <MaterialCommunityIcons name="account-off" size={48} color={colors.border} />
