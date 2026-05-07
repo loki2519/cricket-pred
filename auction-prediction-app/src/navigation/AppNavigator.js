@@ -25,6 +25,7 @@ async function triggerSyncSound() {
 }
 
 import SplashScreen from '../screens/SplashScreen';
+import WelcomeTemplateScreen from '../screens/WelcomeTemplateScreen';
 import LoginScreen from '../screens/Auth/LoginScreen';
 import RegisterScreen from '../screens/Auth/RegisterScreen';
 import ForgotPasswordScreen from '../screens/Auth/ForgotPasswordScreen';
@@ -35,6 +36,7 @@ import SelectTeamScreen from '../screens/User/SelectTeamScreen';
 const Stack = createStackNavigator();
 
 export default function AppNavigator() {
+  const [showTemplate, setShowTemplate] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
   const [session, setSession] = useState(null);
   const [role, setRole] = useState(null);
@@ -139,6 +141,10 @@ export default function AppNavigator() {
       }
     }
   };
+
+  if (showTemplate) {
+    return <WelcomeTemplateScreen onProceed={() => setShowTemplate(false)} />;
+  }
 
   if (showSplash) {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;
