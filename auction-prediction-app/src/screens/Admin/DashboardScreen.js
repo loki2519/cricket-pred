@@ -1,6 +1,6 @@
 import AppleSpinner from '../../components/AppleSpinner';
 import React, { useState, useEffect, useCallback } from 'react';
-import {, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
@@ -8,7 +8,7 @@ import { colors, globalStyles } from '../../styles/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function DashboardScreen({ navigation }) {
-  
+
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -16,6 +16,7 @@ export default function DashboardScreen({ navigation }) {
     setRefreshing(false);
   }, []);
 
+  const [stats, setStats] = useState({ totalPlayers: 0, totalTeams: 0, avgAuctionPrice: 0 });
   const [loading, setLoading] = useState(true);
 
   // Re-fetch whenever screen is focused
@@ -62,7 +63,7 @@ export default function DashboardScreen({ navigation }) {
 
   return (
     <SafeAreaView style={globalStyles.container} edges={['right', 'bottom', 'left']}>
-      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 20 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         <Text style={[globalStyles.title, { marginBottom: 5 }]}>Admin Dashboard</Text>
         <Text style={{ color: colors.textLight, marginBottom: 25 }}>Real-time statistics</Text>
 
@@ -79,7 +80,7 @@ export default function DashboardScreen({ navigation }) {
               />
               <StatCard
                 icon="shield-account"
-                title="Total Team Managers"
+                title="Total Teams"
                 value={stats.totalTeams.toString()}
               />
             </View>
@@ -97,7 +98,7 @@ export default function DashboardScreen({ navigation }) {
             <View style={{ flexDirection: 'column' }}>
               <DashboardCard icon="account-plus" title="Add Player" onPress={() => navigation.navigate('Add Player')} />
               <DashboardCard icon="eye" title="Manage Players" onPress={() => navigation.navigate('View Players')} />
-              <DashboardCard icon="shield-plus" title="Manage Team Managers" onPress={() => navigation.navigate('Manage Teams')} />
+              <DashboardCard icon="shield-plus" title="Manage Teams" onPress={() => navigation.navigate('Manage Teams')} />
               <DashboardCard icon="chart-line" title="Predict Price" onPress={() => navigation.navigate('Predict Price')} />
             </View>
           </>

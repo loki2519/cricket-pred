@@ -32,6 +32,14 @@ const COL = {
 const MIN_WIDTH = Object.values(COL).reduce((a, b) => a + b, 0);
 
 export default function ViewPlayersScreen({ navigation }) {
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchPlayers();
+    setRefreshing(false);
+  }, []);
+
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
 

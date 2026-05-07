@@ -1,6 +1,6 @@
 import AppleSpinner from '../../components/AppleSpinner';
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ScrollView, , RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
@@ -32,6 +32,14 @@ const ROLE_COLOR = {
 };
 
 export default function Players({ navigation, teamId }) {
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchPlayers();
+    setRefreshing(false);
+  }, []);
+
   const [players, setPlayers]               = useState([]);
   const [loading, setLoading]               = useState(true);
   const [remainingBudget, setRemainingBudget] = useState(null);
