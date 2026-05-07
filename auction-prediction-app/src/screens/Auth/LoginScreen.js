@@ -26,7 +26,7 @@ export default function LoginScreen({ navigation }) {
   const handleGoogleLogin = async () => {
     setPostSpinner('google');
     // Simple wait to show spinner
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     setGLoading(true);
     try {

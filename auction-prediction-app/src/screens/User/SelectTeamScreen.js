@@ -1,13 +1,20 @@
 import AppleSpinner from '../../components/AppleSpinner';
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import {, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { colors, globalStyles } from '../../styles/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function SelectTeamScreen({ navigation }) {
-  const [teams, setTeams] = useState([]);
+  
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchTeams();
+    setRefreshing(false);
+  }, []);
+
   const [takenTeamIds, setTakenTeamIds] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,12 +41,12 @@ export default function SelectTeamScreen({ navigation }) {
     } catch (err) {
       console.log('Error fetching teams:', err.message);
     } finally {
-      setTimeout(() => setLoading(false), 1000);
+      setTimeout(() => setLoading(false), 500);
     }
   };
 
   const handleConfirm = async () => {
-    if (!selectedTeam) return Alert.alert('Error', 'Please select a team first');
+    if (!selectedTeam) return Alert.alert('Error', 'Please select a team manager first');
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -49,7 +56,7 @@ export default function SelectTeamScreen({ navigation }) {
         .from('user_teams').select('*').eq('team_id', selectedTeam.id);
 
       if (existing && existing.length > 0) {
-        Alert.alert('Team Taken', 'This team has already been selected by another user. Please choose another team.');
+        Alert.alert('Team Manager Taken', 'This team manager has already been selected by another user. Please choose another team manager.');
         setSaving(false);
         return;
       }
@@ -76,20 +83,20 @@ export default function SelectTeamScreen({ navigation }) {
       <View style={{ flex: 1, justifyContent: 'center', padding: 24 }}>
         <Text style={{ fontSize: 28, fontWeight: 'bold', color: colors.white, textAlign: 'center', marginBottom: 8 }}>AuctionOracle</Text>
         <Text style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginBottom: 30 }}>
-          Select your team to continue
+          Select your team manager to continue
         </Text>
 
         <View style={{ backgroundColor: colors.white, borderRadius: 16, padding: 20 }}>
-          <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.primary, marginBottom: 16 }}>Available Teams</Text>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.primary, marginBottom: 16 }}>Available Team Managers</Text>
 
           {loading ? (
             <AppleSpinner size="large" color={colors.primary} style={{ marginVertical: 30 }} />
           ) : teams.length === 0 ? (
             <Text style={{ textAlign: 'center', color: colors.textLight, marginVertical: 30 }}>
-              No teams available. Ask your admin to create teams first.
+              No team managers available. Ask your admin to create team managers first.
             </Text>
           ) : (
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
               {teams.map(team => {
                 const isTaken = takenTeamIds.includes(team.id);
                 const isSelected = selectedTeam?.id === team.id;
@@ -131,7 +138,7 @@ export default function SelectTeamScreen({ navigation }) {
             onPress={handleConfirm}
             disabled={!selectedTeam || saving}
           >
-            {saving ? <AppleSpinner color={colors.white} /> : <Text style={globalStyles.buttonText}>Confirm Team</Text>}
+            {saving ? <AppleSpinner color={colors.white} /> : <Text style={globalStyles.buttonText}>Confirm Team Manager</Text>}
           </TouchableOpacity>
 
           <TouchableOpacity

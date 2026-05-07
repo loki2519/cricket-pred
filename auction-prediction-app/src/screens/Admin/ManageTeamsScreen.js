@@ -1,7 +1,7 @@
 import AppleSpinner from '../../components/AppleSpinner';
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity,
-  Alert, ScrollView, Modal, Image, } from 'react-native';
+  Alert, ScrollView, Modal, Image, Platform , RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { globalStyles, colors } from '../../styles/theme';
@@ -11,7 +11,15 @@ export default function ManageTeamsScreen() {
   const [teams, setTeams]           = useState([]);
   const [name, setName]             = useState('');
   const [budget, setBudget]         = useState('');
-  const [loading, setLoading]       = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchTeams();
+    setRefreshing(false);
+  }, []);
+
   const [editModal, setEditModal]   = useState(false);
   const [editTeam, setEditTeam]     = useState(null);
   const [editName, setEditName]     = useState('');
@@ -29,16 +37,16 @@ export default function ManageTeamsScreen() {
   };
 
   const addTeam = async () => {
-    if (!name.trim()) return Alert.alert('Error', 'Team name is required');
+    if (!name.trim()) return Alert.alert('Error', 'Team Manager name is required');
     setLoading(true);
     const { error } = await supabase.from('teams').insert([{
       name:   name.trim(),
       budget: parseInt(budget) || 100000000,
     }]);
-    setTimeout(() => setLoading(false), 1000);
+    setTimeout(() => setLoading(false), 500);
     if (error) Alert.alert('Error', error.message);
     else {
-      Alert.alert('Success', `Team "${name}" added!`);
+      Alert.alert('Success', `Team Manager "${name}" added!`);
       setName(''); setBudget('');
       fetchTeams();
     }
@@ -52,68 +60,76 @@ export default function ManageTeamsScreen() {
   };
 
   const handleEdit = async () => {
-    if (!editName.trim()) return Alert.alert('Error', 'Team name is required');
+    if (!editName.trim()) return Alert.alert('Error', 'Team Manager name is required');
     setLoading(true);
     const { error } = await supabase.from('teams')
       .update({ name: editName.trim(), budget: parseInt(editBudget) || 100000000 })
       .eq('id', editTeam.id);
-    setTimeout(() => setLoading(false), 1000);
+    setTimeout(() => setLoading(false), 500);
     if (error) Alert.alert('Error', error.message);
     else { setEditModal(false); fetchTeams(); }
   };
 
+  const executeDelete = async (team) => {
+    setLoading(true);
+    try {
+      const { error: pErr } = await supabase.from('purchases').delete().eq('team_id', team.id);
+      if (pErr) throw pErr;
+      const { error: uErr } = await supabase.from('user_teams').delete().eq('team_id', team.id);
+      if (uErr) throw uErr;
+      const { error } = await supabase.from('teams').delete().eq('id', team.id);
+      if (error) throw error;
+      fetchTeams();
+    } catch (err) {
+      Alert.alert('Error', err.message);
+    } finally {
+      setTimeout(() => setLoading(false), 500);
+    }
+  };
+
   const handleDelete = (team) => {
-    Alert.alert(
-      'Delete Team',
-      `Are you sure you want to delete "${team.name}"?\n\nThis permanently removes the team and all related data.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete', style: 'destructive',
-          onPress: async () => {
-            setLoading(true);
-            try {
-              const { error: pErr } = await supabase.from('purchases').delete().eq('team_id', team.id);
-              if (pErr) throw pErr;
-              const { error: uErr } = await supabase.from('user_teams').delete().eq('team_id', team.id);
-              if (uErr) throw uErr;
-              const { error } = await supabase.from('teams').delete().eq('id', team.id);
-              if (error) throw error;
-              fetchTeams();
-            } catch (err) {
-              Alert.alert('Error', err.message);
-            } finally {
-              setTimeout(() => setLoading(false), 1000);
-            }
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Are you sure you want to delete "${team.name}"?\n\nThis permanently removes the team manager and all related data.`)) {
+        executeDelete(team);
+      }
+    } else {
+      Alert.alert(
+        'Delete Team Manager',
+        `Are you sure you want to delete "${team.name}"?\n\nThis permanently removes the team manager and all related data.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete', style: 'destructive',
+            onPress: () => executeDelete(team),
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   const formatCurrency = (v) => '₹' + (v || 0).toLocaleString('en-IN');
 
   return (
     <SafeAreaView style={globalStyles.container} edges={['right', 'bottom', 'left']}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 20 }}>
-        <Text style={[globalStyles.title, { marginBottom: 20 }]}>Manage Teams</Text>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 20 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+        <Text style={[globalStyles.title, { marginBottom: 20 }]}>Manage Team Managers</Text>
 
         {/* Add Team */}
         <View style={globalStyles.card}>
           <Text style={{ fontWeight: 'bold', color: colors.primary, marginBottom: 12, fontSize: 16 }}>
-            Add New Team
+            Add New Team Manager
           </Text>
-          <Text style={{ color: colors.text, marginBottom: 4 }}>Team Name *</Text>
-          <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} placeholder="e.g. Mumbai Indians" value={name} onChangeText={setName} />
+          <Text style={{ color: colors.text, marginBottom: 4 }}>Team Manager Name *</Text>
+          <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} placeholder="e.g. Nita" value={name} onChangeText={setName} />
           <Text style={{ color: colors.text, marginBottom: 4 }}>Budget (₹)</Text>
           <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} placeholder="Default: ₹10,00,00,000" keyboardType="numeric" value={budget} onChangeText={setBudget} />
           <TouchableOpacity style={globalStyles.button} onPress={addTeam} disabled={loading}>
-            {loading ? <AppleSpinner color={colors.white} /> : <Text style={globalStyles.buttonText}>Add Team</Text>}
+            {loading ? <AppleSpinner color={colors.white} /> : <Text style={globalStyles.buttonText}>Add Team Manager</Text>}
           </TouchableOpacity>
         </View>
 
         <Text style={{ fontWeight: 'bold', color: colors.primary, fontSize: 16, marginTop: 24, marginBottom: 12 }}>
-          All Teams ({teams.length})
+          All Team Managers ({teams.length})
         </Text>
 
         {teams.map((item) => (
@@ -169,8 +185,8 @@ export default function ManageTeamsScreen() {
       <Modal visible={editModal} transparent animationType="slide">
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
           <View style={{ backgroundColor: colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24 }}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.primary, marginBottom: 16 }}>Edit Team</Text>
-            <Text style={{ color: colors.text, marginBottom: 4 }}>Team Name</Text>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.primary, marginBottom: 16 }}>Edit Team Manager</Text>
+            <Text style={{ color: colors.text, marginBottom: 4 }}>Team Manager Name</Text>
             <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} value={editName} onChangeText={setEditName} />
             <Text style={{ color: colors.text, marginBottom: 4 }}>Budget (₹)</Text>
             <TextInput placeholderTextColor="#FFB380" style={globalStyles.input} keyboardType="numeric" value={editBudget} onChangeText={setEditBudget} />

@@ -20,7 +20,7 @@ export default function SplashScreen({ onFinish }) {
     // Automatically start animation after 1 second (no manual tap needed)
     const timer = setTimeout(() => {
       handleIconPress();
-    }, 1000);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, []);

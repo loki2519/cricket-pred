@@ -1,0 +1,202 @@
+[
+  {
+    "Player Name": "Arjun Sharma",
+    "Role": "Batsman",
+    "Matches": 125,
+    "Runs": 4600,
+    "Strike Rate": 142,
+    "Wickets": 2,
+    "Economy Rate": 0.0,
+    "Catches": 55
+  },
+  {
+    "Player Name": "Abhishek Sharma",
+    "Role": "All-rounder",
+    "Matches": 100,
+    "Runs": 3200,
+    "Strike Rate": 136,
+    "Wickets": 28,
+    "Economy Rate": 7.0,
+    "Catches": 42
+  },
+  {
+    "Player Name": "Karthik Reddy",
+    "Role": "Batsman",
+    "Matches": 70,
+    "Runs": 2200,
+    "Strike Rate": 145,
+    "Wickets": 1,
+    "Economy Rate": 0.0,
+    "Catches": 35
+  },
+  {
+    "Player Name": "Viraj Singh",
+    "Role": "All-rounder",
+    "Matches": 155,
+    "Runs": 5400,
+    "Strike Rate": 140,
+    "Wickets": 45,
+    "Economy Rate": 7.1,
+    "Catches": 65
+  },
+  {
+    "Player Name": "Rohit Kumar",
+    "Role": "All-rounder",
+    "Matches": 90,
+    "Runs": 2500,
+    "Strike Rate": 132,
+    "Wickets": 40,
+    "Economy Rate": 6.6,
+    "Catches": 38
+  },
+  {
+    "Player Name": "Sandeep Yadav",
+    "Role": "All-rounder",
+    "Matches": 120,
+    "Runs": 4100,
+    "Strike Rate": 138,
+    "Wickets": 30,
+    "Economy Rate": 6.9,
+    "Catches": 48
+  },
+  {
+    "Player Name": "Rahul Gupta",
+    "Role": "Bowler",
+    "Matches": 65,
+    "Runs": 500,
+    "Strike Rate": 110,
+    "Wickets": 55,
+    "Economy Rate": 6.1,
+    "Catches": 22
+  },
+  {
+    "Player Name": "Aditya Mehta",
+    "Role": "Batsman",
+    "Matches": 135,
+    "Runs": 5100,
+    "Strike Rate": 146,
+    "Wickets": 3,
+    "Economy Rate": 0.0,
+    "Catches": 60
+  },
+  {
+    "Player Name": "Nikhil Choudhary",
+    "Role": "Bowler",
+    "Matches": 80,
+    "Runs": 650,
+    "Strike Rate": 108,
+    "Wickets": 62,
+    "Economy Rate": 5.9,
+    "Catches": 28
+  },
+  {
+    "Player Name": "Manoj Tiwari",
+    "Role": "All-rounder",
+    "Matches": 110,
+    "Runs": 3700,
+    "Strike Rate": 134,
+    "Wickets": 32,
+    "Economy Rate": 6.8,
+    "Catches": 42
+  },
+  {
+    "Player Name": "Deepak Singh",
+    "Role": "Bowler",
+    "Matches": 70,
+    "Runs": 450,
+    "Strike Rate": 105,
+    "Wickets": 48,
+    "Economy Rate": 6.2,
+    "Catches": 24
+  },
+  {
+    "Player Name": "Rohit Malhotra",
+    "Role": "Batsman",
+    "Matches": 165,
+    "Runs": 6400,
+    "Strike Rate": 150,
+    "Wickets": 1,
+    "Economy Rate": 0.0,
+    "Catches": 72
+  },
+  {
+    "Player Name": "Ajay Thakur",
+    "Role": "All-rounder",
+    "Matches": 95,
+    "Runs": 2800,
+    "Strike Rate": 130,
+    "Wickets": 36,
+    "Economy Rate": 6.7,
+    "Catches": 37
+  },
+  {
+    "Player Name": "Vikas Iyer",
+    "Role": "Bowler",
+    "Matches": 60,
+    "Runs": 350,
+    "Strike Rate": 102,
+    "Wickets": 44,
+    "Economy Rate": 5.8,
+    "Catches": 21
+  },
+  {
+    "Player Name": "Sanjay Panday",
+    "Role": "All-rounder",
+    "Matches": 125,
+    "Runs": 4300,
+    "Strike Rate": 139,
+    "Wickets": 34,
+    "Economy Rate": 6.8,
+    "Catches": 52
+  },
+  {
+    "Player Name": "Harshith Rana",
+    "Role": "All-rounder",
+    "Matches": 75,
+    "Runs": 2100,
+    "Strike Rate": 128,
+    "Wickets": 25,
+    "Economy Rate": 6.5,
+    "Catches": 32
+  },
+  {
+    "Player Name": "Yash Kulkarni",
+    "Role": "All-rounder",
+    "Matches": 145,
+    "Runs": 5300,
+    "Strike Rate": 144,
+    "Wickets": 38,
+    "Economy Rate": 7.0,
+    "Catches": 65
+  },
+  {
+    "Player Name": "Rohan Kumar",
+    "Role": "All-rounder",
+    "Matches": 92,
+    "Runs": 2600,
+    "Strike Rate": 131,
+    "Wickets": 41,
+    "Economy Rate": 6.4,
+    "Catches": 36
+  },
+  {
+    "Player Name": "Subhman Gill",
+    "Role": "Bowler",
+    "Matches": 58,
+    "Runs": 400,
+    "Strike Rate": 104,
+    "Wickets": 50,
+    "Economy Rate": 6.0,
+    "Catches": 23
+  },
+  {
+    "Player Name": "Shivam Kumar",
+    "Role": "Wicket-keeper",
+    "Matches": 175,
+    "Runs": 6900,
+    "Strike Rate": 152,
+    "Wickets": 0,
+    "Economy Rate": 0.0,
+    "Catches": 85
+  }
+]

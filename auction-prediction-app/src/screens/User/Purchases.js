@@ -54,7 +54,7 @@ export default function Purchases({ teamId }) {
     } catch (err) {
       console.log('Error fetching purchases:', err.message);
     } finally {
-      setTimeout(() => setLoading(false), 1000);
+      setTimeout(() => setLoading(false), 500);
     }
   };
 
@@ -73,7 +73,7 @@ export default function Purchases({ teamId }) {
           onPress: async () => {
             setLoading(true);
             const { error } = await supabase.from('purchases').delete().eq('id', item.id);
-            if (error) { setTimeout(() => setLoading(false), 1000); Alert.alert('Error', error.message); }
+            if (error) { setTimeout(() => setLoading(false), 500); Alert.alert('Error', error.message); }
             else { Alert.alert('Released', `${p.name || 'Player'} removed.`); fetchPurchases(); }
           },
         },

@@ -48,7 +48,7 @@ export default function ForgotPasswordScreen({ navigation }) {
       email: email.trim().toLowerCase(),
       options: { shouldCreateUser: false },
     });
-    setTimeout(() => setLoading(false), 1000);
+    setTimeout(() => setLoading(false), 500);
 
     if (error) {
       if (error.message.toLowerCase().includes('rate')) {
@@ -86,7 +86,7 @@ export default function ForgotPasswordScreen({ navigation }) {
     });
 
     if (otpError) {
-      setTimeout(() => setLoading(false), 1000);
+      setTimeout(() => setLoading(false), 500);
       return Alert.alert('Invalid OTP', 'The OTP is incorrect or expired. Please try again.');
     }
 
@@ -95,7 +95,7 @@ export default function ForgotPasswordScreen({ navigation }) {
       password: newPassword,
     });
 
-    setTimeout(() => setLoading(false), 1000);
+    setTimeout(() => setLoading(false), 500);
 
     if (updateError) {
       Alert.alert('Error', updateError.message);

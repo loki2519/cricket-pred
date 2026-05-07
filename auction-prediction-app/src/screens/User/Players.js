@@ -1,6 +1,6 @@
 import AppleSpinner from '../../components/AppleSpinner';
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ScrollView, } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ScrollView, , RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
@@ -10,15 +10,16 @@ import { CATEGORY_COLORS } from '../../lib/playerCategory';
 
 // ── Column widths (must sum ≤ total minWidth below) ──────────
 const COL = {
-  name:  140,
+  name:  120,
   cat:    44,
-  role:  100,
-  mat:    38,
-  sr:     50,
-  runs:   50,
-  wkts:   44,
-  stumps: 50,
-  price:  95,
+  role:   85,
+  mat:    36,
+  sr:     45,
+  runs:   45,
+  wkts:   40,
+  eco:    40,
+  stumps: 45,
+  price:  90,
   arrow:  32,
 };
 const MIN_WIDTH = Object.values(COL).reduce((a, b) => a + b, 0); // ~643
@@ -68,7 +69,7 @@ export default function Players({ navigation, teamId }) {
     } catch (err) {
       console.log('Players fetch error:', err.message);
     } finally {
-      setTimeout(() => setLoading(false), 1000);
+      setTimeout(() => setLoading(false), 500);
     }
   };
 
@@ -136,6 +137,10 @@ export default function Players({ navigation, teamId }) {
         <Text style={{ width: COL.wkts, textAlign: 'center', color: colors.text, fontSize: 12 }}>
           {item.wickets ?? '—'}
         </Text>
+        {/* Eco */}
+        <Text style={{ width: COL.eco, textAlign: 'center', color: colors.text, fontSize: 12 }}>
+          {item.economy ?? '—'}
+        </Text>
         {/* Stumps */}
         <Text style={{ width: COL.stumps, textAlign: 'center', color: colors.text, fontSize: 12 }}>
           {item.stumps ?? '—'}
@@ -189,6 +194,7 @@ export default function Players({ navigation, teamId }) {
                   <Text style={{ width: COL.sr,    color: '#fff', fontSize: 11, fontWeight: 'bold', textAlign: 'center' }}>SR</Text>
                   <Text style={{ width: COL.runs,  color: '#fff', fontSize: 11, fontWeight: 'bold', textAlign: 'center' }}>Runs</Text>
                   <Text style={{ width: COL.wkts,  color: '#fff', fontSize: 11, fontWeight: 'bold', textAlign: 'center' }}>Wkts</Text>
+                  <Text style={{ width: COL.eco,   color: '#fff', fontSize: 11, fontWeight: 'bold', textAlign: 'center' }}>Eco</Text>
                   <Text style={{ width: COL.stumps,color: '#fff', fontSize: 11, fontWeight: 'bold', textAlign: 'center' }}>Stmp</Text>
                   <Text style={{ width: COL.price, color: '#fff', fontSize: 11, fontWeight: 'bold', textAlign: 'right' }}>Price (₹)</Text>
                   <View style={{ width: COL.arrow }} />
@@ -196,6 +202,7 @@ export default function Players({ navigation, teamId }) {
 
                 {/* Rows */}
                 <FlatList
+                  refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                   style={{ flex: 1 }}
                   data={players}
                   keyExtractor={item => item.id.toString()}

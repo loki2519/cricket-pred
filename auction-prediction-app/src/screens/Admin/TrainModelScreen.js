@@ -14,11 +14,11 @@ export default function TrainModelScreen() {
       // const res = await fetch('http://localhost:8000/train');
       // const data = await res.json();
       setTimeout(() => {
-        setTimeout(() => setLoading(false), 1000);
+        setTimeout(() => setLoading(false), 500);
         Alert.alert('Success', 'Model trained successfully on Data.xlsx');
       }, 2000);
     } catch (error) {
-      setTimeout(() => setLoading(false), 1000);
+      setTimeout(() => setLoading(false), 500);
       Alert.alert('Error', 'Failed to train model');
     }
   };

@@ -50,7 +50,7 @@ export default function RegisterScreen({ navigation }) {
 
     setLoading(true);
     const { error } = await supabase.auth.signUp({ email, password });
-    setTimeout(() => setLoading(false), 1000);
+    setTimeout(() => setLoading(false), 500);
 
     if (error) {
       Alert.alert('Registration Error', error.message);
@@ -64,7 +64,7 @@ export default function RegisterScreen({ navigation }) {
     if (!otp) return Alert.alert('Error', 'Please enter the OTP sent to your email.');
     setLoading(true);
     const { error } = await supabase.auth.verifyOtp({ email, token: otp, type: 'signup' });
-    setTimeout(() => setLoading(false), 1000);
+    setTimeout(() => setLoading(false), 500);
 
     if (error) {
       Alert.alert('Error', 'OTP is incorrect or has expired. Please try again.');

@@ -84,7 +84,7 @@ export default function Dashboard({ navigation, teamId, teamName }) {
     } catch (err) {
       console.log('Dashboard error:', err.message);
     } finally {
-      setTimeout(() => setLoading(false), 1000);
+      setTimeout(() => setLoading(false), 500);
     }
   };
 

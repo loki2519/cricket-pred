@@ -55,7 +55,7 @@ export default function PlayerDetails({ route, navigation }) {
         }
       }
 
-      if (!team) { Alert.alert('Error', 'No team found! Please select a team first.'); return; }
+      if (!team) { Alert.alert('Error', 'No team manager found! Please select a team manager first.'); return; }
 
       // 2. Check if player already purchased (by any team)
       const { data: existing } = await supabase
@@ -92,14 +92,12 @@ export default function PlayerDetails({ route, navigation }) {
     } catch (err) {
       Alert.alert('Error', err.message);
     } finally {
-      setTimeout(() => setLoading(false), 1000);
+      setTimeout(() => setLoading(false), 500);
     }
   };
 
   // Stats grid — show only relevant fields
   const isWK       = player.role === 'Wicketkeeper Batsman';
-  const isBowler   = player.role === 'Bowler' || player.role === 'All-Rounder';
-  const isBatsman  = player.role !== 'Bowler';
 
   return (
     <SafeAreaView style={globalStyles.container} edges={['right', 'bottom', 'left']}>
@@ -155,10 +153,10 @@ export default function PlayerDetails({ route, navigation }) {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 4, marginHorizontal: -4 }}>
           {[
             { label: 'Matches', value: player.matches ?? '—' },
-            isBatsman && { label: 'Runs', value: player.runs ?? '—' },
-            isBatsman && { label: 'Strike Rate', value: player.strike_rate ?? '—' },
-            isBowler  && { label: 'Wickets', value: player.wickets ?? '—' },
-            isBowler  && { label: 'Economy', value: player.economy ?? '—' },
+            { label: 'Runs', value: player.runs ?? '—' },
+            { label: 'Strike Rate', value: player.strike_rate ?? '—' },
+            { label: 'Wickets', value: player.wickets ?? '—' },
+            { label: 'Economy', value: player.economy ?? '—' },
             isWK      && { label: 'Stumpings', value: player.stumps ?? '—' },
             isWK      && { label: 'Catches', value: player.catches ?? '—' },
           ].filter(Boolean).map((stat, idx) => (

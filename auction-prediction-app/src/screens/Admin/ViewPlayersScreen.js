@@ -1,6 +1,7 @@
 import AppleSpinner from '../../components/AppleSpinner';
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, ScrollView, } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, Alert, ScrollView, Platform , RefreshControl } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../lib/supabase';
 import { globalStyles, colors } from '../../styles/theme';
@@ -16,15 +17,16 @@ const ROLE_COLOR = {
 
 // Column widths — identical to User/Players.js (consistency)
 const COL = {
-  name:  140,
+  name:  120,
   cat:    44,
-  role:  100,
-  mat:    38,
-  sr:     50,
-  runs:   50,
-  wkts:   44,
-  stumps: 50,
-  price:  95,
+  role:   85,
+  mat:    36,
+  sr:     45,
+  runs:   45,
+  wkts:   40,
+  eco:    40,
+  stumps: 45,
+  price:  90,
   del:    40,
 };
 const MIN_WIDTH = Object.values(COL).reduce((a, b) => a + b, 0);
@@ -33,7 +35,11 @@ export default function ViewPlayersScreen({ navigation }) {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { fetchPlayers(); }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchPlayers();
+    }, [])
+  );
 
   const fetchPlayers = async () => {
     setLoading(true);
@@ -43,22 +49,34 @@ export default function ViewPlayersScreen({ navigation }) {
       .order('name', { ascending: true });
     if (error) Alert.alert('Error', error.message);
     else setPlayers(data || []);
-    setTimeout(() => setLoading(false), 1000);
+    setTimeout(() => setLoading(false), 500);
   };
 
-  const handleDelete = async (id, name) => {
-    Alert.alert('Delete Player', `Remove "${name}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive',
-        onPress: async () => {
-          await supabase.from('purchases').delete().eq('player_id', id);
-          const { error } = await supabase.from('players').delete().eq('id', id);
-          if (!error) fetchPlayers();
-          else Alert.alert('Error', error.message);
+  const executeDelete = async (id) => {
+    const { error: pErr } = await supabase.from('purchases').delete().eq('player_id', id);
+    if (pErr) {
+      Alert.alert('Error deleting purchase record', pErr.message);
+      return;
+    }
+    const { error } = await supabase.from('players').delete().eq('id', id);
+    if (!error) fetchPlayers();
+    else Alert.alert('Error deleting player', error.message);
+  };
+
+  const handleDelete = (id, name) => {
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Remove "${name}"?`)) {
+        executeDelete(id);
+      }
+    } else {
+      Alert.alert('Delete Player', `Remove "${name}"?`, [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete', style: 'destructive',
+          onPress: () => executeDelete(id),
         },
-      },
-    ]);
+      ]);
+    }
   };
 
   const formatPrice = (price) =>
@@ -115,6 +133,10 @@ export default function ViewPlayersScreen({ navigation }) {
         <Text style={{ width: COL.wkts, textAlign: 'center', color: colors.text, fontSize: 12 }}>
           {item.wickets ?? '—'}
         </Text>
+        {/* Eco */}
+        <Text style={{ width: COL.eco, textAlign: 'center', color: colors.text, fontSize: 12 }}>
+          {item.economy ?? '—'}
+        </Text>
         {/* Stumps */}
         <Text style={{ width: COL.stumps, textAlign: 'center', color: colors.text, fontSize: 12 }}>
           {item.stumps ?? '—'}
@@ -125,10 +147,11 @@ export default function ViewPlayersScreen({ navigation }) {
         </Text>
         {/* Delete */}
         <TouchableOpacity
-          style={{ width: COL.del, alignItems: 'center' }}
+          style={{ width: COL.del, alignItems: 'center', justifyContent: 'center', padding: 5 }}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           onPress={() => handleDelete(item.id, item.name)}
         >
-          <MaterialCommunityIcons name="trash-can-outline" color={colors.error} size={20} />
+          <MaterialCommunityIcons name="trash-can-outline" color={colors.error} size={22} />
         </TouchableOpacity>
       </View>
     );
@@ -168,6 +191,7 @@ export default function ViewPlayersScreen({ navigation }) {
                   <Text style={{ width: COL.sr,    color: '#fff', fontSize: 11, fontWeight: 'bold', textAlign: 'center' }}>SR</Text>
                   <Text style={{ width: COL.runs,  color: '#fff', fontSize: 11, fontWeight: 'bold', textAlign: 'center' }}>Runs</Text>
                   <Text style={{ width: COL.wkts,  color: '#fff', fontSize: 11, fontWeight: 'bold', textAlign: 'center' }}>Wkts</Text>
+                  <Text style={{ width: COL.eco,   color: '#fff', fontSize: 11, fontWeight: 'bold', textAlign: 'center' }}>Eco</Text>
                   <Text style={{ width: COL.stumps,color: '#fff', fontSize: 11, fontWeight: 'bold', textAlign: 'center' }}>Stmp</Text>
                   <Text style={{ width: COL.price, color: '#fff', fontSize: 11, fontWeight: 'bold', textAlign: 'right' }}>Price (₹)</Text>
                   <Text style={{ width: COL.del,   color: colors.error, fontSize: 11, fontWeight: 'bold', textAlign: 'center' }}>Del</Text>
@@ -175,6 +199,7 @@ export default function ViewPlayersScreen({ navigation }) {
 
                 {/* Rows */}
                 <FlatList
+                  refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                   style={{ flex: 1 }}
                   data={players}
                   keyExtractor={item => item.id.toString()}

@@ -46,11 +46,10 @@ export default function AddPlayerScreen({ navigation }) {
   const basePrice    = autoCategory ? (CATEGORY_BASE_PRICE[autoCategory] || 0) : 0;
 
   // Role-specific field visibility
-  const isBatType      = ['Batsman', 'All-Rounder', 'Wicketkeeper Batsman'].includes(selectedRole);
-  const showRuns        = isBatType;
-  const showStrikeRate  = isBatType;
-  const showWickets     = ['Bowler', 'All-Rounder'].includes(selectedRole);
-  const showEconomy     = ['Bowler', 'All-Rounder'].includes(selectedRole);
+  const showRuns        = true;
+  const showStrikeRate  = true;
+  const showWickets     = true;
+  const showEconomy     = true;
   const showStumps      = selectedRole === 'Wicketkeeper Batsman';
   const showCatches     = selectedRole === 'Wicketkeeper Batsman';
 
@@ -81,7 +80,7 @@ export default function AddPlayerScreen({ navigation }) {
     if (showCatches) payload.catches = parseInt(form.catches) || 0;
 
     const { error } = await supabase.from('players').insert([payload]);
-    setTimeout(() => setLoading(false), 1000);
+    setTimeout(() => setLoading(false), 500);
 
     if (error) {
       Alert.alert('Error', error.message);

@@ -48,7 +48,7 @@ export default function AppNavigator() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) handleSession(session, 'INITIAL_SESSION');
-      else setTimeout(() => setLoading(false), 1000);
+      else setTimeout(() => setLoading(false), 500);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -61,7 +61,7 @@ export default function AppNavigator() {
         else {
           setRole(null);
           setTeamInfo(null);
-          setTimeout(() => setLoading(false), 1000);
+          setTimeout(() => setLoading(false), 500);
         }
       }
     });
@@ -81,20 +81,18 @@ export default function AppNavigator() {
       setLoading(true);
     }
 
-    // Hardcoded admin email — primary source of truth
-    const HARDCODED_ADMINS = ['karthuhemachandrika1@gmail.com'];
-    let adminEmails = [...HARDCODED_ADMINS];
-
+    // Admin email sourced exclusively from admin_config table (no hardcode)
+    let adminEmail = null;
     try {
       const { data } = await supabase.from('admin_config').select('admin_email').eq('id', 1).single();
-      if (data && data.admin_email && !adminEmails.includes(data.admin_email)) {
-        adminEmails.push(data.admin_email);
+      if (data && data.admin_email) {
+        adminEmail = data.admin_email.trim().toLowerCase();
       }
     } catch (err) {
-      console.log('Could not fetch dynamic admin config, using hardcoded list');
+      console.log('Could not fetch admin config:', err.message);
     }
 
-    if (adminEmails.includes(email)) {
+    if (adminEmail && email.trim().toLowerCase() === adminEmail) {
       if (isNewLogin) await triggerSyncSound();
 
       // If logging in actively, keep LoginScreen spinner alive while sound plays

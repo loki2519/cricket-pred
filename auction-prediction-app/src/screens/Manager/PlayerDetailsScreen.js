@@ -35,7 +35,7 @@ export default function PlayerDetailsScreen({ route, navigation }) {
 
     if (remaining < price) {
       Alert.alert('Insufficient Budget', 'Check your current bidding balance amount');
-      setTimeout(() => setLoading(false), 1000);
+      setTimeout(() => setLoading(false), 500);
       return;
     }
 
@@ -48,12 +48,12 @@ export default function PlayerDetailsScreen({ route, navigation }) {
 
     if(error){
       Alert.alert('Error', error.message);
-      setTimeout(() => setLoading(false), 1000);
+      setTimeout(() => setLoading(false), 500);
       return;
     }
 
     
-    setTimeout(() => setLoading(false), 1000);
+    setTimeout(() => setLoading(false), 500);
     Alert.alert('Success', `Bought ${player.name} for $${price}`);
     navigation.goBack();
   };

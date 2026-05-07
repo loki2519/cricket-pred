@@ -37,10 +37,10 @@ export default function PredictPriceScreen() {
   const formatCurrency = (val) => '₹' + val.toLocaleString('en-IN');
 
   const isBatType   = ['Batsman', 'All-Rounder', 'Wicketkeeper Batsman'].includes(selectedRole);
-  const showRuns       = isBatType;
-  const showStrikeRate = isBatType;
-  const showWickets    = ['Bowler', 'All-Rounder'].includes(selectedRole);
-  const showEconomy    = ['Bowler', 'All-Rounder'].includes(selectedRole);
+  const showRuns       = true;
+  const showStrikeRate = true;
+  const showWickets    = true;
+  const showEconomy    = true;
   const showStumps     = selectedRole === 'Wicketkeeper Batsman';
   const showCatches    = selectedRole === 'Wicketkeeper Batsman';
 

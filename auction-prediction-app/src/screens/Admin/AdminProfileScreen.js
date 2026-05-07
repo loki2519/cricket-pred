@@ -12,7 +12,7 @@ export default function AdminProfileScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch live config from the db
+    // Fetch live config from the supabase
     supabase.from('admin_config').select('admin_email, admin_password').eq('id', 1).single()
       .then(({ data, error }) => {
         if (data) {
@@ -23,7 +23,7 @@ export default function AdminProfileScreen() {
           setEmail('lokimaddi19@gmail.com');
           setPassword('123456');
         }
-        setTimeout(() => setLoading(false), 1000);
+        setTimeout(() => setLoading(false), 500);
       });
   }, []);
 

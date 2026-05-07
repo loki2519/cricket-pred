@@ -71,8 +71,7 @@ export default function AdminDrawer() {
         options={{ drawerIcon: ({ color }) => <MaterialCommunityIcons name="account-plus" color={color} size={24} /> }} />
       <Drawer.Screen name="View Players" component={ViewPlayersScreen}
         options={{ drawerIcon: ({ color }) => <MaterialCommunityIcons name="account-group" color={color} size={24} /> }} />
-      <Drawer.Screen name="Manage Teams" component={ManageTeamsScreen}
-        options={{ drawerIcon: ({ color }) => <MaterialCommunityIcons name="shield-account" color={color} size={24} /> }} />
+      <Drawer.Screen name="Manage Teams" options={{ title: 'Manage Team Managers', drawerIcon: ({ color }) => <MaterialCommunityIcons name="shield-account" color={color} size={24} /> }} component={ManageTeamsScreen} />
       <Drawer.Screen name="Predict Price" component={PredictPriceScreen}
         options={{ drawerIcon: ({ color }) => <MaterialCommunityIcons name="chart-line" color={color} size={24} /> }} />
       <Drawer.Screen name="Settings" component={SettingsScreen}
