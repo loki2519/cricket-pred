@@ -2,12 +2,6 @@ const { app, BrowserWindow, protocol } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
-const logFile = path.join('c:\\Users\\maddi\\Desktop\\cricket pred\\electron-log.txt');
-fs.writeFileSync(logFile, '--- APP STARTED ---\n');
-function log(msg) {
-  try { fs.appendFileSync(logFile, msg + '\n'); } catch (e) {}
-}
-
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, bypassCSP: true, corsEnabled: true } }
 ]);
@@ -28,7 +22,6 @@ function createWindow() {
 
 app.whenReady().then(() => {
   protocol.handle('app', (request) => {
-    let originalUrl = request.url;
     let requestUrl = request.url.replace('app://-', '');
     requestUrl = requestUrl.split('?')[0].split('#')[0];
     requestUrl = decodeURIComponent(requestUrl);
@@ -41,7 +34,6 @@ app.whenReady().then(() => {
     
     try {
       if (!fs.existsSync(filePath)) {
-        log(`[404] URL: ${originalUrl} -> PATH: ${filePath}`);
         return new Response('Not Found', { status: 404 });
       }
       
@@ -61,8 +53,6 @@ app.whenReady().then(() => {
       else if (filePath.endsWith('.eot')) mimeType = 'application/vnd.ms-fontobject';
       else if (filePath.endsWith('.otf')) mimeType = 'font/otf';
 
-      log(`[200] URL: ${originalUrl} -> MIME: ${mimeType}`);
-
       return new Response(buffer, {
         status: 200,
         headers: {
@@ -71,7 +61,6 @@ app.whenReady().then(() => {
         }
       });
     } catch (error) {
-      log(`[500] ERROR: ${error.message}`);
       return new Response('Internal Server Error', { status: 500 });
     }
   });
