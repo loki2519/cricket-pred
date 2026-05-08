@@ -1,0 +1,26 @@
+{
+  "name": "auction-prediction-desktop",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "node build-desktop.js"
+  },
+  "build": {
+    "appId": "com.auctionprediction.desktop",
+    "win": {
+      "target": "portable"
+    },
+    "files": [
+      "**/*",
+      "app/assets/node_modules/**/*"
+    ]
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "electron-serve": "^3.0.1"
+  }
+}
